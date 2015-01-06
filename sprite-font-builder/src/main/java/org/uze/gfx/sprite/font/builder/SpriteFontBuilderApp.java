@@ -1,6 +1,7 @@
 package org.uze.gfx.sprite.font.builder;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -10,10 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import javafx.stage.FileChooser;
@@ -27,6 +25,10 @@ import org.slf4j.LoggerFactory;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by Uze on 06.01.2015.
@@ -38,19 +40,22 @@ public class SpriteFontBuilderApp extends Application {
     private final Logger logger = LoggerFactory.getLogger(SpriteFontBuilderApp.class);
     private Stage appStage;
     private final Tab bitmapTab = new Tab("Font Bitmap");
-    private final Text example = new Text();
     private final ComboBox<FontWeight> fontWeightComboBox = new ComboBox<>();
     private final ComboBox<FontPosture> fontPostureComboBox = new ComboBox<>();
     private final ComboBox<Integer> fontSizeComboBox = new ComboBox<>();
+    private final Text example = new Text();
     private final TextField exampleText = new TextField();
     private final ListView<String> fontListView = new ListView<>();
+    private double leftPaneWidth = 200.0;
+    private final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
 
     @Override
     public void start(Stage stage) throws Exception {
+        leftPaneWidth = 250.0;
+
         final BorderPane borderPane = new BorderPane();
 
-        final MenuBar menuBar = createMenu();
-        borderPane.setTop(menuBar);
+        borderPane.setTop(createMenu());
 
         final TabPane tabPane = createTabPane();
         borderPane.setCenter(tabPane);
@@ -85,11 +90,18 @@ public class SpriteFontBuilderApp extends Application {
         vbox.setPadding(new Insets(4.0));
         result.setContent(vbox);
 
-        final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
         charRanges.setEditable(true);
         charRanges.setMinHeight(120.0);
 
-        vbox.getChildren().add(charRanges);
+        final TextField defaultCharacterField = new TextField("?");
+        defaultCharacterField.setMaxWidth(30.0);
+
+        final Button buildBtn = new Button("Build font sprite");
+        buildBtn.setOnAction((e) -> onBuildFontSprite());
+
+        vbox.getChildren().addAll(new Label("Character ranges:"), charRanges,
+            new HBox(4.0, new Label("Default character:"), defaultCharacterField),
+            buildBtn);
 
         return result;
     }
@@ -104,33 +116,38 @@ public class SpriteFontBuilderApp extends Application {
 
         tab.setContent(pane);
 
+        final VBox leftBox = new VBox(4.0);
+        leftBox.setPadding(new Insets(4.0));
+
+        leftBox.setPrefWidth(leftPaneWidth);
+        pane.getChildren().add(leftBox);
+
+        AnchorPane.setTopAnchor(leftBox, 2.0);
+        AnchorPane.setLeftAnchor(leftBox, 2.0);
+        AnchorPane.setBottomAnchor(leftBox, 2.0);
+
         final TextField fontFilter = new TextField();
-        fontFilter.textProperty().addListener((a, b, c) -> onFontFilterChanged());
+        fontFilter.textProperty().addListener((a, b, c) -> onFontFilterChanged(b, c));
+        fontFilter.setPromptText("Start typing font family to filter list");
 
-        AnchorPane.setTopAnchor(fontFilter, 2.0);
-        AnchorPane.setLeftAnchor(fontFilter, 2.0);
-
-        fontListView.setPrefWidth(250.0);
         fontListView.setEditable(false);
         fontListView.setFixedCellSize(Region.USE_COMPUTED_SIZE);
         fontListView.setCellFactory((listView) -> new FontListCell());
         fontListView.setItems(FXCollections.observableList(Font.getFamilies()));
         fontListView.getSelectionModel().selectedItemProperty().addListener((a, b, c) -> onNewFontSelected());
 
-        pane.getChildren().addAll(fontFilter, fontListView);
+        VBox.setVgrow(fontListView, Priority.ALWAYS);
 
-        AnchorPane.setTopAnchor(fontListView, 20.0);
-        AnchorPane.setLeftAnchor(fontListView, 2.0);
-        AnchorPane.setBottomAnchor(fontListView, 2.0);
+        leftBox.getChildren().addAll(fontFilter, fontListView);
 
-        final VBox vbox = new VBox(4.0);
-        vbox.setPadding(new Insets(4.0));
-        pane.getChildren().add(vbox);
+        final VBox rightBox = new VBox(4.0);
+        rightBox.setPadding(new Insets(4.0));
+        pane.getChildren().add(rightBox);
 
-        AnchorPane.setTopAnchor(vbox, 2.0);
-        AnchorPane.setLeftAnchor(vbox, fontListView.getPrefWidth() + 2.0);
-        AnchorPane.setBottomAnchor(vbox, 2.0);
-        AnchorPane.setRightAnchor(vbox, 2.0);
+        AnchorPane.setTopAnchor(rightBox, 2.0);
+        AnchorPane.setLeftAnchor(rightBox, leftPaneWidth + 2.0);
+        AnchorPane.setBottomAnchor(rightBox, 2.0);
+        AnchorPane.setRightAnchor(rightBox, 2.0);
 
         final Label fontWeightLabel = new Label("Font weight:");
         fontWeightLabel.setLabelFor(fontWeightComboBox);
@@ -158,14 +175,10 @@ public class SpriteFontBuilderApp extends Application {
         exampleText.setPromptText("Leave empty to use font family as example text");
         exampleText.textProperty().addListener((a, b, c) -> onNewFontSelected());
 
-//        example.setAlignment(Pos.TOP_LEFT);
-//        example.setPadding(new Insets(4.0));
-//        example.setPrefHeight(100.0);
-//        example.setMaxHeight(100.0);
-//        example.setTextOverrun(OverrunStyle.CLIP);
         example.setText("Example text");
+        example.setFocusTraversable(false);
 
-        vbox.getChildren().addAll(fontWeightLabel, fontWeightComboBox,
+        rightBox.getChildren().addAll(fontWeightLabel, fontWeightComboBox,
             fontPostureLabel, fontPostureComboBox,
             fontSizeLabel, fontSizeComboBox,
             exampleText, example);
@@ -180,19 +193,35 @@ public class SpriteFontBuilderApp extends Application {
 
         final Menu menuFile = new Menu("File");
 
-        final Menu fileSaveAs = new Menu("Save As...");
+        final MenuItem fileSaveAs = new MenuItem("Save As...");
 
         fileSaveAs.setOnAction(this::onSaveAs);
 
-        menuFile.getItems().add(fileSaveAs);
+        final MenuItem fileExit = new MenuItem("Exit");
+        fileExit.setOnAction((e) -> Platform.exit());
+
+        menuFile.getItems().addAll(fileSaveAs, new SeparatorMenuItem(), fileExit);
 
         menuBar.getMenus().addAll(menuFile);
 
         return menuBar;
     }
 
-    private void onFontFilterChanged() {
-
+    private void onFontFilterChanged(String oldValue, String newValue) {
+        final String prefix = newValue.toUpperCase();
+        final String selectedItem = fontListView.getSelectionModel().getSelectedItem();
+        final List<String> items;
+        if (StringUtils.isEmpty(newValue)) {
+            items = Font.getFamilies();
+        } else {
+            items = Font.getFamilies()
+                .stream()
+                .filter((s) -> s.toUpperCase().startsWith(prefix))
+                .sorted()
+                .collect(Collectors.toList());
+        }
+        fontListView.setItems(FXCollections.observableList(items));
+        fontListView.getSelectionModel().select(selectedItem);
     }
 
     private void onSaveAs(ActionEvent e) {
@@ -214,11 +243,15 @@ public class SpriteFontBuilderApp extends Application {
                 }
             }
         } else {
-            Dialogs.create()
-                .title(APP_TITLE)
-                .message("There is no image to save!")
-                .showWarning();
+            showWarning("There is no image to save!");
         }
+    }
+
+    private void showWarning(String message) {
+        Dialogs.create()
+            .title(APP_TITLE)
+            .message(message)
+            .showWarning();
     }
 
     private void onNewFontSelected() {
@@ -255,6 +288,48 @@ public class SpriteFontBuilderApp extends Application {
         return fontListView.getSelectionModel().getSelectedItem();
     }
 
+    private void onBuildFontSprite() {
+        try {
+            final List<CharRange> ranges = getCharRanges();
+        } catch (Exception ex) {
+            showWarning(ex.getMessage());
+        }
+    }
+
+    private List<CharRange> getCharRanges() {
+        final String text = charRanges.getText();
+        if (StringUtils.isEmpty(text)) {
+            return Collections.emptyList();
+        }
+
+        final List<CharRange> result = new ArrayList<>();
+        final String[] lines = text.split("\\r?\\n|\\r|,");
+        for (String line : lines) {
+            if (StringUtils.isEmpty(line)) {
+                continue;
+            }
+            final String[] parts = line.split("-");
+            if (parts.length == 2) {
+                result.add(new CharRange(toChar(Integer.parseInt(parts[0])), toChar(Integer.parseInt(parts[1]))));
+            } else if (parts.length == 1) {
+                final char start = toChar(Integer.parseInt(parts[0]));
+
+                result.add(new CharRange(start, start));
+            } else {
+                throw new IllegalArgumentException("Bad range: " + line);
+            }
+        }
+
+        return result;
+    }
+
+    private char toChar(int value) {
+        if (value < Character.MIN_VALUE || value > Character.MAX_VALUE) {
+            throw new IllegalArgumentException("Bad character: " + value);
+        }
+        return (char) value;
+    }
+
     private static class FontListCell extends ListCell<String> {
 
         @Override
@@ -268,7 +343,38 @@ public class SpriteFontBuilderApp extends Application {
                 text.setFontSmoothingType(FontSmoothingType.LCD);
 
                 setGraphic(text);
+            } else {
+                setGraphic(null);
             }
+        }
+    }
+
+    private static class CharRange {
+        private final char start;
+        private final char end;
+
+        public char getStart() {
+            return start;
+        }
+
+        public char getEnd() {
+            return end;
+        }
+
+        public CharRange(char start, char end) {
+            if (start > end) {
+                throw new IllegalArgumentException("start > end");
+            }
+            this.start = start;
+            this.end = end;
+        }
+
+        public char[] toArray() {
+            final char[] result = new char[end - start + 1];
+            for (char i = start; i <= end; i++) {
+                result[i] = i;
+            }
+            return result;
         }
     }
 }
