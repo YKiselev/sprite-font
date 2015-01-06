@@ -5,7 +5,6 @@ import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -21,6 +20,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.lang3.StringUtils;
+import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +34,11 @@ import java.io.IOException;
 public class SpriteFontBuilderApp extends Application {
 
     public static final double COMBO_BOX_WIDTH = 200.0;
+    public static final String APP_TITLE = "Sprite Font Builder";
     private final Logger logger = LoggerFactory.getLogger(SpriteFontBuilderApp.class);
     private Stage appStage;
     private final Tab bitmapTab = new Tab("Font Bitmap");
-    private final Label example = new Label();
+    private final Text example = new Text();
     private final ComboBox<FontWeight> fontWeightComboBox = new ComboBox<>();
     private final ComboBox<FontPosture> fontPostureComboBox = new ComboBox<>();
     private final ComboBox<Integer> fontSizeComboBox = new ComboBox<>();
@@ -58,7 +59,7 @@ public class SpriteFontBuilderApp extends Application {
 
         appStage = stage;
 
-        stage.setTitle("Sprite Font Builder");
+        stage.setTitle(APP_TITLE);
         stage.setScene(scene);
         stage.setMinWidth(400);
         stage.setMinHeight(200);
@@ -103,6 +104,12 @@ public class SpriteFontBuilderApp extends Application {
 
         tab.setContent(pane);
 
+        final TextField fontFilter = new TextField();
+        fontFilter.textProperty().addListener((a, b, c) -> onFontFilterChanged());
+
+        AnchorPane.setTopAnchor(fontFilter, 2.0);
+        AnchorPane.setLeftAnchor(fontFilter, 2.0);
+
         fontListView.setPrefWidth(250.0);
         fontListView.setEditable(false);
         fontListView.setFixedCellSize(Region.USE_COMPUTED_SIZE);
@@ -110,9 +117,9 @@ public class SpriteFontBuilderApp extends Application {
         fontListView.setItems(FXCollections.observableList(Font.getFamilies()));
         fontListView.getSelectionModel().selectedItemProperty().addListener((a, b, c) -> onNewFontSelected());
 
-        pane.getChildren().add(fontListView);
+        pane.getChildren().addAll(fontFilter, fontListView);
 
-        AnchorPane.setTopAnchor(fontListView, 2.0);
+        AnchorPane.setTopAnchor(fontListView, 20.0);
         AnchorPane.setLeftAnchor(fontListView, 2.0);
         AnchorPane.setBottomAnchor(fontListView, 2.0);
 
@@ -151,11 +158,11 @@ public class SpriteFontBuilderApp extends Application {
         exampleText.setPromptText("Leave empty to use font family as example text");
         exampleText.textProperty().addListener((a, b, c) -> onNewFontSelected());
 
-        example.setAlignment(Pos.TOP_LEFT);
-        example.setPadding(new Insets(4.0));
-        example.setPrefHeight(100.0);
-        example.setMaxHeight(100.0);
-        example.setTextOverrun(OverrunStyle.CLIP);
+//        example.setAlignment(Pos.TOP_LEFT);
+//        example.setPadding(new Insets(4.0));
+//        example.setPrefHeight(100.0);
+//        example.setMaxHeight(100.0);
+//        example.setTextOverrun(OverrunStyle.CLIP);
         example.setText("Example text");
 
         vbox.getChildren().addAll(fontWeightLabel, fontWeightComboBox,
@@ -184,6 +191,10 @@ public class SpriteFontBuilderApp extends Application {
         return menuBar;
     }
 
+    private void onFontFilterChanged() {
+
+    }
+
     private void onSaveAs(ActionEvent e) {
         final FileChooser fileChooser1 = new FileChooser();
         fileChooser1.setTitle("Save Image");
@@ -202,6 +213,11 @@ public class SpriteFontBuilderApp extends Application {
                     }
                 }
             }
+        } else {
+            Dialogs.create()
+                .title(APP_TITLE)
+                .message("There is no image to save!")
+                .showWarning();
         }
     }
 
