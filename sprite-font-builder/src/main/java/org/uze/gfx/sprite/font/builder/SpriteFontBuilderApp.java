@@ -3,15 +3,11 @@ package org.uze.gfx.sprite.font.builder;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
@@ -22,10 +18,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.uze.gfx.sprite.font.SpriteFont;
 
-import javax.imageio.ImageIO;
 import java.io.File;
-import java.io.IOException;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +46,7 @@ public class SpriteFontBuilderApp extends Application {
     private double leftPaneWidth = 200.0;
     private final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
     private final TextField defaultCharacterField = new TextField("?");
+    private SpriteFont spriteFont;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -226,25 +223,25 @@ public class SpriteFontBuilderApp extends Application {
     }
 
     private void onSaveAs(ActionEvent e) {
-        final FileChooser fileChooser1 = new FileChooser();
-        fileChooser1.setTitle("Save Image");
+        try {
+            final FileChooser fileChooser1 = new FileChooser();
+            fileChooser1.setTitle("Save Image");
+            fileChooser1.setInitialFileName(spriteFont.getName());
+            fileChooser1.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar"));
 
-        final Node node = bitmapTab.getContent();
-        if (node != null) {
-            final WritableImage image = node.snapshot(new SnapshotParameters(), null);
-            // todo - need to wait?
-            if (image != null) {
+            if (spriteFont != null) {
                 final File file = fileChooser1.showSaveDialog(appStage);
                 if (file != null) {
-                    try {
-                        ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
-                    } catch (IOException ex) {
-                        logger.error("Save failed!", ex);
+                    try (FileOutputStream os = new FileOutputStream(file)) {
+                        spriteFont.saveToStream(os);
                     }
                 }
+            } else {
+                showWarning("There is nothing to save!");
             }
-        } else {
-            showWarning("There is no image to save!");
+        } catch (Exception ex) {
+            logger.error("Save failed!", ex);
+            showError("Save failed!", ex);
         }
     }
 
@@ -253,6 +250,13 @@ public class SpriteFontBuilderApp extends Application {
             .title(APP_TITLE)
             .message(message)
             .showWarning();
+    }
+
+    private void showError(String message, Throwable t) {
+        Dialogs.create()
+            .title(APP_TITLE)
+            .message(message)
+            .showException(t);
     }
 
     private void onNewFontSelected() {
@@ -301,9 +305,9 @@ public class SpriteFontBuilderApp extends Application {
         try {
             final List<CharRange> ranges = getCharRanges();
             final SpriteFontBuilder builder = SpriteFontBuilder.create(getSelectedFont(), ranges, getDefaultCharacter());
-            final WritableImage image = builder.build();
 
-            bitmapTab.setContent(new ImageView(image));
+            spriteFont = builder.build();
+            bitmapTab.setContent(new ImageView(spriteFont.getImage()));
         } catch (Exception ex) {
             showWarning(ex.getMessage());
         }

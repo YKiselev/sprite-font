@@ -10,6 +10,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.text.*;
 import org.uze.gfx.sprite.font.Glyph;
+import org.uze.gfx.sprite.font.SpriteFont;
+import org.uze.gfx.sprite.font.SpriteFontInfo;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,13 +26,15 @@ public class SpriteFontBuilder {
 
     private final Font font;
     private final char[] characters;
+    private final int defaultCharacterIndex;
     private boolean isFixedPitch;
     private int charWidth;
     private int fontHeight;
 
-    private SpriteFontBuilder(Font font, char[] characters) {
+    private SpriteFontBuilder(Font font, char[] characters, int defaultCharacterIndex) {
         this.font = font;
         this.characters = characters;
+        this.defaultCharacterIndex = defaultCharacterIndex;
     }
 
     public static SpriteFontBuilder create(Font font, List<CharRange> ranges, char defaultCharacter) {
@@ -50,15 +54,19 @@ public class SpriteFontBuilder {
 
         Arrays.sort(chars);
 
-        return new SpriteFontBuilder(font, chars);
+        final int defaultCharacterIndex = Arrays.binarySearch(chars, defaultCharacter);
+
+        return new SpriteFontBuilder(font, chars, defaultCharacterIndex);
     }
 
-    public WritableImage build() {
+    public SpriteFont build() {
         final int[] widths = measureCharacters();
         final Canvas canvas = createCanvas(widths);
         final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
+        final WritableImage image = canvas.snapshot(new SnapshotParameters(), null);
+        final SpriteFontInfo info = new SpriteFontInfo(characters, defaultCharacterIndex, glyphs, isFixedPitch, fontHeight, charWidth);
 
-        return canvas.snapshot(new SnapshotParameters(), null);
+        return new SpriteFont(font.getName(), info, image);
     }
 
     private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
@@ -81,7 +89,7 @@ public class SpriteFontBuilder {
 
             ctx.fillText(text, x, y);
 
-            final Glyph glyph = new Glyph(x, y, w, fontHeight);
+            final Glyph glyph = new Glyph(x, y, w);
             glyphs[i] = glyph;
 
             x += w;
