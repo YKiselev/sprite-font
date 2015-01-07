@@ -47,6 +47,7 @@ public class SpriteFontBuilderApp extends Application {
     private final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
     private final TextField defaultCharacterField = new TextField("?");
     private SpriteFont spriteFont;
+    public static final FileChooser.ExtensionFilter JAR_EXT_FILTER = new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar");
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -226,8 +227,9 @@ public class SpriteFontBuilderApp extends Application {
         try {
             final FileChooser fileChooser1 = new FileChooser();
             fileChooser1.setTitle("Save Image");
-            fileChooser1.setInitialFileName(spriteFont.getName());
-            fileChooser1.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar"));
+            fileChooser1.setInitialFileName(spriteFont.getName() + ".jar");
+            fileChooser1.getExtensionFilters().clear();
+            fileChooser1.getExtensionFilters().add(JAR_EXT_FILTER);
 
             if (spriteFont != null) {
                 final File file = fileChooser1.showSaveDialog(appStage);
