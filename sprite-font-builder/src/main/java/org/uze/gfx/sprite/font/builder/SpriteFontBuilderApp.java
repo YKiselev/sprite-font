@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -48,6 +49,7 @@ public class SpriteFontBuilderApp extends Application {
     private final ListView<String> fontListView = new ListView<>();
     private double leftPaneWidth = 200.0;
     private final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
+    private final TextField defaultCharacterField = new TextField("?");
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -93,7 +95,6 @@ public class SpriteFontBuilderApp extends Application {
         charRanges.setEditable(true);
         charRanges.setMinHeight(120.0);
 
-        final TextField defaultCharacterField = new TextField("?");
         defaultCharacterField.setMaxWidth(30.0);
 
         final Button buildBtn = new Button("Build font sprite");
@@ -288,9 +289,21 @@ public class SpriteFontBuilderApp extends Application {
         return fontListView.getSelectionModel().getSelectedItem();
     }
 
+    private char getDefaultCharacter() {
+        final String value = defaultCharacterField.getText();
+        if (StringUtils.isEmpty(value) || value.length() != 1) {
+            throw new IllegalArgumentException("Bad default character: " + value);
+        }
+        return value.charAt(0);
+    }
+
     private void onBuildFontSprite() {
         try {
             final List<CharRange> ranges = getCharRanges();
+            final SpriteFontBuilder builder = SpriteFontBuilder.create(getSelectedFont(), ranges, getDefaultCharacter());
+            final WritableImage image = builder.build();
+
+            bitmapTab.setContent(new ImageView(image));
         } catch (Exception ex) {
             showWarning(ex.getMessage());
         }
@@ -349,32 +362,4 @@ public class SpriteFontBuilderApp extends Application {
         }
     }
 
-    private static class CharRange {
-        private final char start;
-        private final char end;
-
-        public char getStart() {
-            return start;
-        }
-
-        public char getEnd() {
-            return end;
-        }
-
-        public CharRange(char start, char end) {
-            if (start > end) {
-                throw new IllegalArgumentException("start > end");
-            }
-            this.start = start;
-            this.end = end;
-        }
-
-        public char[] toArray() {
-            final char[] result = new char[end - start + 1];
-            for (char i = start; i <= end; i++) {
-                result[i] = i;
-            }
-            return result;
-        }
-    }
 }
