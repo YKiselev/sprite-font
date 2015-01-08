@@ -1,15 +1,13 @@
 package org.uze.gfx.sprite.font;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
+import org.uze.gfx.font.proto.FontProtos;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -22,7 +20,7 @@ public class SpriteFont {
 
     private final String name;
 
-    private final SpriteFontInfo info;
+    private final FontProtos.SpriteFontInfo info;
 
     private final WritableImage image;
 
@@ -30,7 +28,7 @@ public class SpriteFont {
         return name;
     }
 
-    public SpriteFontInfo getInfo() {
+    public FontProtos.SpriteFontInfo getInfo() {
         return info;
     }
 
@@ -38,7 +36,7 @@ public class SpriteFont {
         return image;
     }
 
-    public SpriteFont(String name, SpriteFontInfo info, WritableImage image) {
+    public SpriteFont(String name, FontProtos.SpriteFontInfo info, WritableImage image) {
         this.name = name;
         this.info = info;
         this.image = image;
@@ -51,14 +49,10 @@ public class SpriteFont {
 
         final String basePath = "fonts/sprite/" + name;
 
-        final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .create();
-
         try (JarOutputStream os = new JarOutputStream(outputStream, manifest)) {
-            JarEntry entry = new JarEntry(basePath + "/info.json");
+            JarEntry entry = new JarEntry(basePath + "/info.pbuf");
             os.putNextEntry(entry);
-            os.write(gson.toJson(info).getBytes(StandardCharsets.UTF_8));
+            info.writeTo(os);
             os.closeEntry();
 
             entry = new JarEntry(basePath + "/image.png");

@@ -9,9 +9,9 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.text.*;
-import org.uze.gfx.sprite.font.Glyph;
+import org.uze.gfx.font.proto.FontProtos.Glyph;
+import org.uze.gfx.font.proto.FontProtos.SpriteFontInfo;
 import org.uze.gfx.sprite.font.SpriteFont;
-import org.uze.gfx.sprite.font.SpriteFontInfo;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,7 +28,7 @@ public class SpriteFontBuilder {
     private final char[] characters;
     private final int defaultCharacterIndex;
     private boolean isFixedPitch;
-    private int charWidth;
+    private int characterWidth;
     private int fontHeight;
 
     private SpriteFontBuilder(Font font, char[] characters, int defaultCharacterIndex) {
@@ -64,9 +64,23 @@ public class SpriteFontBuilder {
         final Canvas canvas = createCanvas(widths);
         final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
         final WritableImage image = canvas.snapshot(new SnapshotParameters(), null);
-        final SpriteFontInfo info = new SpriteFontInfo(characters, defaultCharacterIndex, glyphs, isFixedPitch, fontHeight, charWidth);
+        final SpriteFontInfo.Builder infoBuilder = SpriteFontInfo.newBuilder();
 
-        return new SpriteFont(font.getName(), info, image);
+        infoBuilder.setCharacters(String.valueOf(characters))
+            .addAllGlyphs(Arrays.asList(glyphs))
+            .setFontHeight(fontHeight);
+
+        if (defaultCharacterIndex >= 0) {
+            infoBuilder.setDefaultCharacterIndex(defaultCharacterIndex);
+        }
+
+        if (characterWidth > 0) {
+            infoBuilder.setCharacterWidth(characterWidth);
+        }
+
+        final SpriteFontInfo fontInfo = infoBuilder.build();
+
+        return new SpriteFont(font.getName(), fontInfo, image);
     }
 
     private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
@@ -77,6 +91,7 @@ public class SpriteFontBuilder {
         int x = 0;
         int y = fontHeight;
         final Glyph[] glyphs = new Glyph[characters.length];
+        final Glyph.Builder builder = Glyph.newBuilder();
 
         for (int i = 0; i < characters.length; i++) {
             final int w = widths[i];
@@ -89,8 +104,15 @@ public class SpriteFontBuilder {
 
             ctx.fillText(text, x, y);
 
-            final Glyph glyph = new Glyph(x, y, w);
-            glyphs[i] = glyph;
+            builder.clear()
+                .setX(x)
+                .setY(y);
+
+            if (characterWidth != w) {
+                builder.setWidth(w);
+            }
+
+            glyphs[i] = builder.build();
 
             x += w;
         }
@@ -122,7 +144,7 @@ public class SpriteFontBuilder {
 
         if (isFixedPitch) {
             text.setText("x");
-            charWidth = (int) text.getLayoutBounds().getWidth();
+            characterWidth = (int) text.getLayoutBounds().getWidth();
         }
 
         final int[] widths = new int[characters.length];

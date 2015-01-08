@@ -1,3 +1,5 @@
 target/
 .*
 *.iml
+
+sprite-font-lib/src/main/java/org/uze/gfx/font/proto/FontProtos.java

@@ -1,0 +1,27 @@
+package org.uze.gfx.font.proto;
+
+//option java_package = "com.example.tutorial";
+option java_outer_classname = "FontProtos";
+
+message SpriteFontInfo {
+
+    required string characters = 1;
+
+    repeated Glyph glyphs = 2;
+
+    required int32 fontHeight = 3;
+
+    optional int32 defaultCharacterIndex = 4;
+
+    // If set, font is fixed pitch font
+    optional int32 characterWidth = 5;
+}
+
+message Glyph {
+
+    required int32 x = 1;
+
+    required int32 y = 2;
+
+    optional int32 width = 3;
+}
