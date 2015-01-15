@@ -3,18 +3,29 @@ package org.uze.gfx.font.proto;
 //option java_package = "com.example.tutorial";
 option java_outer_classname = "FontProtos";
 
-message SpriteFontInfo {
+message SpriteFont {
 
     required string characters = 1;
 
-    repeated Glyph glyphs = 2;
+    repeated Glyph glyph = 2;
 
-    required int32 fontHeight = 3;
+    required int32 font_height = 3;
 
-    optional int32 defaultCharacterIndex = 4;
+    optional int32 default_character_index = 4;
 
     // If set, font is fixed pitch font
-    optional int32 characterWidth = 5;
+    optional int32 character_width = 5;
+
+    required bytes bitmap = 6;
+
+    // Interval in pixels between text lines, i.e. line height = fontHight + lineInterval
+    optional int32 line_interval = 7;
+
+    // Left and right glyph border size
+    optional int32 glyph_x_border = 8;
+
+    // Top and bottom border size
+    optional int32 glyph_y_border = 9;
 }
 
 message Glyph {

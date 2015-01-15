@@ -18,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.uze.gfx.sprite.font.SpriteFont;
+import org.uze.gfx.sprite.font.SpriteFontHolder;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,8 +46,10 @@ public class SpriteFontBuilderApp extends Application {
     private double leftPaneWidth = 200.0;
     private final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
     private final TextField defaultCharacterField = new TextField("?");
-    private SpriteFont spriteFont;
+    private SpriteFontHolder spriteFontHolder;
     public static final FileChooser.ExtensionFilter JAR_EXT_FILTER = new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar");
+    private TextField borderWidthField = new TextField("0");
+    private TextField borderHeightField = new TextField("0");
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -94,12 +96,17 @@ public class SpriteFontBuilderApp extends Application {
         charRanges.setMinHeight(120.0);
 
         defaultCharacterField.setMaxWidth(30.0);
+        borderWidthField.setMaxWidth(30.0);
+        borderHeightField.setMaxWidth(30.0);
 
         final Button buildBtn = new Button("Build font sprite");
         buildBtn.setOnAction((e) -> onBuildFontSprite());
 
         vbox.getChildren().addAll(new Label("Character ranges:"), charRanges,
-            new HBox(4.0, new Label("Default character:"), defaultCharacterField),
+            new HBox(4.0,
+                new Label("Default character:"), defaultCharacterField,
+                new Label("Border width:"), borderWidthField,
+                new Label("Border height:"), borderHeightField),
             buildBtn);
 
         return result;
@@ -221,21 +228,24 @@ public class SpriteFontBuilderApp extends Application {
         }
         fontListView.setItems(FXCollections.observableList(items));
         fontListView.getSelectionModel().select(selectedItem);
+        if (fontListView.getSelectionModel().getSelectedIndex() == -1) {
+            fontListView.getSelectionModel().selectFirst();
+        }
     }
 
     private void onSaveAs(ActionEvent e) {
         try {
             final FileChooser fileChooser1 = new FileChooser();
             fileChooser1.setTitle("Save Image");
-            fileChooser1.setInitialFileName(spriteFont.getName() + ".jar");
+            fileChooser1.setInitialFileName(spriteFontHolder.getName() + ".jar");
             fileChooser1.getExtensionFilters().clear();
             fileChooser1.getExtensionFilters().add(JAR_EXT_FILTER);
 
-            if (spriteFont != null) {
+            if (spriteFontHolder != null) {
                 final File file = fileChooser1.showSaveDialog(appStage);
                 if (file != null) {
                     try (FileOutputStream os = new FileOutputStream(file)) {
-                        spriteFont.saveToStream(os);
+                        spriteFontHolder.saveToStream(os);
                     }
                 }
             } else {
@@ -303,13 +313,43 @@ public class SpriteFontBuilderApp extends Application {
         return value.charAt(0);
     }
 
+    private int getGlyphBorderWidth() {
+        String value = borderWidthField.getText();
+        if (StringUtils.isEmpty(value)) {
+            value = "0";
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid glyph border width: " + value);
+        }
+    }
+
+    private int getGlyphBorderHeight() {
+        String value = borderHeightField.getText();
+        if (StringUtils.isEmpty(value)) {
+            value = "0";
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid glyph border height: " + value);
+        }
+    }
+
     private void onBuildFontSprite() {
         try {
             final List<CharRange> ranges = getCharRanges();
-            final SpriteFontBuilder builder = SpriteFontBuilder.create(getSelectedFont(), ranges, getDefaultCharacter());
+            final SpriteFontBuilder builder = SpriteFontBuilder.create(
+                getSelectedFont(),
+                ranges,
+                getDefaultCharacter(),
+                getGlyphBorderWidth(),
+                getGlyphBorderHeight()
+            );
 
-            spriteFont = builder.build();
-            bitmapTab.setContent(new ImageView(spriteFont.getImage()));
+            spriteFontHolder = builder.build();
+            bitmapTab.setContent(new ImageView(spriteFontHolder.getImage()));
         } catch (Exception ex) {
             showWarning(ex.getMessage());
         }
