@@ -10,12 +10,15 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
 import javafx.scene.text.*;
+import javafx.scene.text.Font;
 import org.uze.gfx.font.proto.FontProtos.Glyph;
 import org.uze.gfx.font.proto.FontProtos.SpriteFont;
 import org.uze.gfx.sprite.font.SpriteFontHolder;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -77,7 +80,12 @@ public class SpriteFontBuilder {
         final int[] widths = measureCharacters();
         final Canvas canvas = createCanvas(widths);
         final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
-        final WritableImage image = canvas.snapshot(new SnapshotParameters(), null);
+
+        final SnapshotParameters snapshotParameters = new SnapshotParameters();
+        snapshotParameters.setFill(Color.color(0, 0, 0, 0));
+
+        final WritableImage image = canvas.snapshot(snapshotParameters, null);
+
         final SpriteFont.Builder fontBuilder = SpriteFont.newBuilder();
 
         fontBuilder.setCharacters(String.valueOf(characters))
@@ -102,8 +110,17 @@ public class SpriteFontBuilder {
 
         final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
         try {
+            final BufferedImage grayImage = new BufferedImage(
+                bufferedImage.getWidth(null),
+                bufferedImage.getHeight(null),
+                BufferedImage.TYPE_BYTE_GRAY
+            );
+            final Graphics2D pic = grayImage.createGraphics();
+            pic.drawImage(bufferedImage, 0, 0, null);
+            pic.dispose();
+
             try (ByteArrayOutputStream os = new ByteArrayOutputStream(BUF_SIZE)) {
-                ImageIO.write(bufferedImage, "png", os);
+                ImageIO.write(grayImage, "png", os);
                 fontBuilder.setBitmap(ByteString.copyFrom(os.toByteArray()));
             }
         } catch (IOException e) {
@@ -114,20 +131,25 @@ public class SpriteFontBuilder {
     }
 
     private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
+        final int width = (int) ctx.getCanvas().getWidth();
+        final int height = (int) ctx.getCanvas().getHeight();
+
         ctx.setFont(font);
+        //ctx.setFill(Color.color(0, 0, 0));
+        //ctx.fillRect(0, 0, width, height);
+        ctx.setFill(Color.color(1, 1, 1, 1));
 
         final int lineHeight = fontHeight + glyphYBorder;
         int x = glyphXBorder;
         int y = lineHeight;
         final Glyph[] glyphs = new Glyph[characters.length];
         final Glyph.Builder builder = Glyph.newBuilder();
-        final int maxWidth = (int) ctx.getCanvas().getWidth();
 
         for (int i = 0; i < characters.length; i++) {
             final int w = widths[i] + glyphXBorder;
             final String text = String.valueOf(characters[i]);
 
-            if (x + w > maxWidth) {
+            if (x + w > width) {
                 x = glyphXBorder;
                 y += lineHeight;
             }

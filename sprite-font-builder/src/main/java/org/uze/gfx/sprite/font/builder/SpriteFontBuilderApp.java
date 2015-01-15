@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -50,6 +51,7 @@ public class SpriteFontBuilderApp extends Application {
     public static final FileChooser.ExtensionFilter JAR_EXT_FILTER = new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar");
     private TextField borderWidthField = new TextField("0");
     private TextField borderHeightField = new TextField("0");
+    private TabPane tabPane = new TabPane();
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -74,8 +76,6 @@ public class SpriteFontBuilderApp extends Application {
     }
 
     private TabPane createTabPane() {
-        final TabPane tabPane = new TabPane();
-
         bitmapTab.setClosable(false);
 
         tabPane.getTabs().addAll(createFontSettingsTab(), createCharacterRangesTab(), bitmapTab);
@@ -349,7 +349,18 @@ public class SpriteFontBuilderApp extends Application {
             );
 
             spriteFontHolder = builder.build();
-            bitmapTab.setContent(new ImageView(spriteFontHolder.getImage()));
+
+            final ImageView imageView = new ImageView(spriteFontHolder.getImage());
+
+            imageView.setPreserveRatio(true);
+            imageView.setBlendMode(BlendMode.EXCLUSION);
+
+            final BorderPane pane = new BorderPane(imageView);
+
+            pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
+
+            bitmapTab.setContent(pane);
+            tabPane.getSelectionModel().select(bitmapTab);
         } catch (Exception ex) {
             showWarning(ex.getMessage());
         }
