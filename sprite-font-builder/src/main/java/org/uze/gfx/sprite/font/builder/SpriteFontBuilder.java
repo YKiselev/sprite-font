@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
+import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -134,6 +135,7 @@ public class SpriteFontBuilder {
 
         ctx.setFont(font);
         ctx.setFill(Color.color(1, 1, 1, 1));
+        ctx.setTextBaseline(VPos.BOTTOM);
 
         final int lineHeight = fontHeight + glyphYBorder;
         int x = glyphXBorder;
@@ -155,10 +157,10 @@ public class SpriteFontBuilder {
             builder.clear()
                 .setCharacter(character)
                 .setX(x)
-                .setY(y);
+                .setY(y - fontHeight);
 
-            if (characterWidth != w) {
-                builder.setWidth(w);
+            if (characterWidth != widths[i]) {
+                builder.setWidth(widths[i]);
             }
 
             glyphs[i] = builder.build();
@@ -183,17 +185,17 @@ public class SpriteFontBuilder {
 
         Bounds bounds = text.getLayoutBounds();
         fontHeight = (int) Math.ceil(bounds.getHeight());
-        final int w1 = (int) bounds.getWidth();
+        final int w1 = (int) Math.ceil(bounds.getWidth());
 
         text.setText("iii");
 
-        final int w2 = (int) text.getLayoutBounds().getWidth();
+        final int w2 = (int) Math.ceil(text.getLayoutBounds().getWidth());
 
         final boolean isFixedPitch = (w1 == w2);
 
         if (isFixedPitch) {
             text.setText("x");
-            characterWidth = (int) text.getLayoutBounds().getWidth();
+            characterWidth = (int) Math.ceil(text.getLayoutBounds().getWidth());
         } else {
             characterWidth = 0;
         }

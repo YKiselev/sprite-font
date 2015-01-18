@@ -1,8 +1,12 @@
 package org.uze.gfx.sprite.font;
 
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
 import org.uze.gfx.font.proto.FontProtos;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.jar.Attributes;
@@ -51,6 +55,18 @@ public class SpriteFontHolder {
             os.putNextEntry(entry);
             info.writeTo(os);
             os.closeEntry();
+        }
+    }
+
+    public void saveGlyphImage(char value, File destFile) throws IOException {
+        for (FontProtos.Glyph glyph : info.getGlyphList()) {
+            if (glyph.getCharacter() == value) {
+                final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+                final BufferedImage glyphImage = bufferedImage.getSubimage(glyph.getX(), glyph.getY(),
+                    glyph.hasWidth() ? glyph.getWidth() : info.getCharacterWidth(), info.getFontHeight());
+                ImageIO.write(glyphImage, "png", destFile);
+                break;
+            }
         }
     }
 }

@@ -1,5 +1,10 @@
 package org.uze.gfx.sprite.font.builder;
 
+import com.google.common.base.Joiner;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.ConfigValueFactory;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -24,6 +29,7 @@ import org.uze.gfx.sprite.font.SpriteFontHolder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,6 +58,7 @@ public class SpriteFontBuilderApp extends Application {
     private TextField borderWidthField = new TextField("0");
     private TextField borderHeightField = new TextField("0");
     private TabPane tabPane = new TabPane();
+    private Config config;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -64,6 +71,10 @@ public class SpriteFontBuilderApp extends Application {
         final TabPane tabPane = createTabPane();
         borderPane.setCenter(tabPane);
 
+        config = ConfigFactory.load();
+
+        loadConfig();
+
         final Scene scene = new Scene(borderPane, 640, 400, Color.WHITE);
 
         appStage = stage;
@@ -73,6 +84,97 @@ public class SpriteFontBuilderApp extends Application {
         stage.setMinWidth(400);
         stage.setMinHeight(200);
         stage.show();
+    }
+
+    private void loadConfig() {
+        final Config state = config.getConfig("sprite-font-builder.state");
+
+        try {
+            final String fontName = state.getString("font.name");
+            if (!StringUtils.isEmpty(fontName)) {
+                final int index = fontListView.getItems().indexOf(fontName);
+                if (index >= 0) {
+                    fontListView.getSelectionModel().select(index);
+                    fontListView.scrollTo(index);
+                }
+            }
+        } catch (Exception ex) {
+            logger.warn("Failed to load font name: {}", ex);
+        }
+
+        try {
+            fontWeightComboBox.getSelectionModel().select(FontWeight.valueOf(state.getString("font.weight")));
+        } catch (Exception ex) {
+            logger.warn("Failed to load font weight: {}", ex);
+        }
+
+        try {
+            fontPostureComboBox.getSelectionModel().select(FontPosture.valueOf(state.getString("font.posture")));
+        } catch (Exception ex) {
+            logger.warn("Failed to load font posture: {}", ex);
+        }
+
+        try {
+            fontSizeComboBox.getSelectionModel().select((Integer) state.getInt("font.size"));
+        } catch (Exception ex) {
+            logger.warn("Failed to load font size: {}", ex);
+        }
+
+        try {
+            charRanges.setText(Joiner.on('\n').join(state.getStringList("glyph.character-ranges")));
+        } catch (Exception ex) {
+            logger.warn("Failed to load character ranges: {}", ex);
+        }
+
+        try {
+            final String value = state.getString("glyph.default-character");
+            if (value != null && value.length() != 1) {
+                logger.warn("Invalid default character: \"{}\"", value);
+            } else {
+                defaultCharacterField.setText(value);
+            }
+        } catch (Exception ex) {
+            logger.warn("Failed to load default character: {}", ex);
+        }
+
+        try {
+            borderWidthField.setText(state.getString("glyph.border.width"));
+        } catch (Exception ex) {
+            logger.warn("Failed to load glyph border width: {}", ex);
+        }
+
+        try {
+            borderHeightField.setText(state.getString("glyph.border.height"));
+        } catch (Exception ex) {
+            logger.warn("Failed to load glyph border height: {}", ex);
+        }
+    }
+
+    private void saveConfig() {
+        // todo save new config???
+        final Config state = config.getConfig("sprite-font-builder.state");
+
+        try {
+            state.withValue("font.name", ConfigValueFactory.fromAnyRef(fontListView.getSelectionModel().getSelectedItem()))
+                .withValue("font.weight", ConfigValueFactory.fromAnyRef(fontWeightComboBox.getSelectionModel().getSelectedItem()))
+                .withValue("font.posture", ConfigValueFactory.fromAnyRef(fontPostureComboBox.getSelectionModel().getSelectedItem()))
+                .withValue("font.size", ConfigValueFactory.fromAnyRef(fontSizeComboBox.getSelectionModel().getSelectedItem()))
+                .withValue("glyph.character-ranges",
+                    ConfigValueFactory.fromIterable(
+                        Arrays.asList(StringUtils.split(charRanges.getText(), "[\\r\\n]+"))
+                    )
+                )
+                .withValue("glyph.default-character", ConfigValueFactory.fromAnyRef(defaultCharacterField.getText()))
+                .withValue("glyph.border.width", ConfigValueFactory.fromAnyRef(borderWidthField.getText()))
+                .withValue("glyph.border.height", ConfigValueFactory.fromAnyRef(borderHeightField.getText()));
+
+            final ConfigRenderOptions options = ConfigRenderOptions.defaults()
+                .setComments(true)
+                .setFormatted(true)
+                .setJson(false);
+        } catch (Exception ex) {
+            logger.warn("Failed to save config: {}", ex);
+        }
     }
 
     private TabPane createTabPane() {
@@ -203,14 +305,43 @@ public class SpriteFontBuilderApp extends Application {
 
         fileSaveAs.setOnAction(this::onSaveAs);
 
+        final MenuItem fileSaveGlyphAs = new MenuItem("Save Glyph As...");
+
+        fileSaveGlyphAs.setOnAction(this::onSaveGlyphAs);
+
         final MenuItem fileExit = new MenuItem("Exit");
         fileExit.setOnAction((e) -> Platform.exit());
 
-        menuFile.getItems().addAll(fileSaveAs, new SeparatorMenuItem(), fileExit);
+        menuFile.getItems().addAll(fileSaveAs, fileSaveGlyphAs, new SeparatorMenuItem(), fileExit);
 
         menuBar.getMenus().addAll(menuFile);
 
         return menuBar;
+    }
+
+    /**
+     * Debug method
+     */
+    private void onSaveGlyphAs(ActionEvent actionEvent) {
+        try {
+            final FileChooser fileChooser1 = new FileChooser();
+            fileChooser1.setTitle("Save Glyph Image");
+            fileChooser1.setInitialFileName("char_g.png");
+            fileChooser1.getExtensionFilters().clear();
+            fileChooser1.getExtensionFilters().add(new FileChooser.ExtensionFilter("Png files", "png"));
+
+            if (spriteFontHolder != null) {
+                final File file = fileChooser1.showSaveDialog(appStage);
+                if (file != null) {
+                    spriteFontHolder.saveGlyphImage('g', file);
+                }
+            } else {
+                showWarning("There is nothing to save!");
+            }
+        } catch (Exception ex) {
+            logger.error("Glyph save failed!", ex);
+            showError("Glyph save failed!", ex);
+        }
     }
 
     private void onFontFilterChanged(String oldValue, String newValue) {
