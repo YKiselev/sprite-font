@@ -5,34 +5,34 @@ option java_outer_classname = "FontProtos";
 
 message SpriteFont {
 
-    required string characters = 1;
+    repeated Glyph glyph = 1;
 
-    repeated Glyph glyph = 2;
+    required int32 font_height = 2;
 
-    required int32 font_height = 3;
-
-    optional int32 default_character_index = 4;
+    optional int32 default_character_index = 3;
 
     // If set, font is fixed pitch font
-    optional int32 character_width = 5;
+    optional int32 character_width = 4;
 
-    required bytes bitmap = 6;
+    required bytes bitmap = 5;
 
     // Interval in pixels between text lines, i.e. line height = fontHight + lineInterval
-    optional int32 line_interval = 7;
+    optional int32 line_interval = 6;
 
     // Left and right glyph border size
-    optional int32 glyph_x_border = 8;
+    optional int32 glyph_x_border = 7;
 
     // Top and bottom border size
-    optional int32 glyph_y_border = 9;
+    optional int32 glyph_y_border = 8;
 }
 
 message Glyph {
 
-    required int32 x = 1;
+    required int32 character = 1;
 
-    required int32 y = 2;
+    required int32 x = 2;
 
-    optional int32 width = 3;
+    required int32 y = 3;
+
+    optional int32 width = 4;
 }

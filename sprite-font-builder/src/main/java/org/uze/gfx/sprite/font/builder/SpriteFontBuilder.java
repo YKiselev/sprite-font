@@ -11,8 +11,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
-import javafx.scene.text.*;
 import javafx.scene.text.Font;
+import javafx.scene.text.*;
 import org.uze.gfx.font.proto.FontProtos.Glyph;
 import org.uze.gfx.font.proto.FontProtos.SpriteFont;
 import org.uze.gfx.sprite.font.SpriteFontHolder;
@@ -88,8 +88,7 @@ public class SpriteFontBuilder {
 
         final SpriteFont.Builder fontBuilder = SpriteFont.newBuilder();
 
-        fontBuilder.setCharacters(String.valueOf(characters))
-            .addAllGlyph(Arrays.asList(glyphs))
+        fontBuilder.addAllGlyph(Arrays.asList(glyphs))
             .setFontHeight(fontHeight);
 
         if (defaultCharacterIndex >= 0) {
@@ -132,11 +131,8 @@ public class SpriteFontBuilder {
 
     private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
         final int width = (int) ctx.getCanvas().getWidth();
-        final int height = (int) ctx.getCanvas().getHeight();
 
         ctx.setFont(font);
-        //ctx.setFill(Color.color(0, 0, 0));
-        //ctx.fillRect(0, 0, width, height);
         ctx.setFill(Color.color(1, 1, 1, 1));
 
         final int lineHeight = fontHeight + glyphYBorder;
@@ -147,16 +143,17 @@ public class SpriteFontBuilder {
 
         for (int i = 0; i < characters.length; i++) {
             final int w = widths[i] + glyphXBorder;
-            final String text = String.valueOf(characters[i]);
+            final char character = characters[i];
 
             if (x + w > width) {
                 x = glyphXBorder;
                 y += lineHeight;
             }
 
-            ctx.fillText(text, x, y);
+            ctx.fillText(String.valueOf(character), x, y);
 
             builder.clear()
+                .setCharacter(character)
                 .setX(x)
                 .setY(y);
 
