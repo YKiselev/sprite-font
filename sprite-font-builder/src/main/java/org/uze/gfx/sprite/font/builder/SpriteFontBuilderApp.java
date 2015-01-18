@@ -20,6 +20,7 @@ import javafx.scene.text.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
@@ -28,6 +29,8 @@ import org.uze.gfx.sprite.font.SpriteFontHolder;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +44,7 @@ public class SpriteFontBuilderApp extends Application {
 
     public static final double COMBO_BOX_WIDTH = 200.0;
     public static final String APP_TITLE = "Sprite Font Builder";
+    public static final String FONT_BUILDER_APP_CONF = "font-builder-app.conf";
     private final Logger logger = LoggerFactory.getLogger(SpriteFontBuilderApp.class);
     private Stage appStage;
     private final Tab bitmapTab = new Tab("Font Bitmap");
@@ -71,9 +75,7 @@ public class SpriteFontBuilderApp extends Application {
         final TabPane tabPane = createTabPane();
         borderPane.setCenter(tabPane);
 
-        config = ConfigFactory.load();
-
-        loadConfig();
+        loadConfig(false);
 
         final Scene scene = new Scene(borderPane, 640, 400, Color.WHITE);
 
@@ -86,9 +88,23 @@ public class SpriteFontBuilderApp extends Application {
         stage.show();
     }
 
-    private void loadConfig() {
-        final Config state = config.getConfig("sprite-font-builder.state");
+    private void loadConfig(boolean reset) {
+        config = ConfigFactory.load();
 
+        if (!reset) {
+            final File file = getConfigFile();
+            if (file.exists()) {
+                config = ConfigFactory.parseFile(file)
+                    .withFallback(config);
+            }
+        } else {
+            final File file = getConfigFile();
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+
+        final Config state = config.getConfig("sprite-font-builder.state");
         try {
             final String fontName = state.getString("font.name");
             if (!StringUtils.isEmpty(fontName)) {
@@ -151,30 +167,36 @@ public class SpriteFontBuilderApp extends Application {
     }
 
     private void saveConfig() {
-        // todo save new config???
         final Config state = config.getConfig("sprite-font-builder.state");
-
         try {
-            state.withValue("font.name", ConfigValueFactory.fromAnyRef(fontListView.getSelectionModel().getSelectedItem()))
-                .withValue("font.weight", ConfigValueFactory.fromAnyRef(fontWeightComboBox.getSelectionModel().getSelectedItem()))
-                .withValue("font.posture", ConfigValueFactory.fromAnyRef(fontPostureComboBox.getSelectionModel().getSelectedItem()))
+            Config newState = state.withValue("font.name", ConfigValueFactory.fromAnyRef(fontListView.getSelectionModel().getSelectedItem()))
+                .withValue("font.weight", ConfigValueFactory.fromAnyRef(ObjectUtils.toString(fontWeightComboBox.getSelectionModel().getSelectedItem())))
+                .withValue("font.posture", ConfigValueFactory.fromAnyRef(ObjectUtils.toString(fontPostureComboBox.getSelectionModel().getSelectedItem())))
                 .withValue("font.size", ConfigValueFactory.fromAnyRef(fontSizeComboBox.getSelectionModel().getSelectedItem()))
                 .withValue("glyph.character-ranges",
-                    ConfigValueFactory.fromIterable(
-                        Arrays.asList(StringUtils.split(charRanges.getText(), "[\\r\\n]+"))
-                    )
+                    ConfigValueFactory.fromIterable(Arrays.asList(StringUtils.split(charRanges.getText(), "[\\r\\n]+")))
                 )
                 .withValue("glyph.default-character", ConfigValueFactory.fromAnyRef(defaultCharacterField.getText()))
                 .withValue("glyph.border.width", ConfigValueFactory.fromAnyRef(borderWidthField.getText()))
                 .withValue("glyph.border.height", ConfigValueFactory.fromAnyRef(borderHeightField.getText()));
 
-            final ConfigRenderOptions options = ConfigRenderOptions.defaults()
-                .setComments(true)
+            final Config newConfig = ConfigFactory.empty()
+                .withValue("sprite-font-builder.state", newState.root());
+            final ConfigRenderOptions options = ConfigRenderOptions.concise()
+                .setComments(false)
                 .setFormatted(true)
                 .setJson(false);
+
+            try (PrintWriter writer = new PrintWriter(getConfigFile())) {
+                writer.write(newConfig.root().render(options));
+            }
         } catch (Exception ex) {
             logger.warn("Failed to save config: {}", ex);
         }
+    }
+
+    private File getConfigFile() {
+        return Paths.get(System.getProperty("user.home"), FONT_BUILDER_APP_CONF).toFile();
     }
 
     private TabPane createTabPane() {
@@ -302,21 +324,50 @@ public class SpriteFontBuilderApp extends Application {
         final Menu menuFile = new Menu("File");
 
         final MenuItem fileSaveAs = new MenuItem("Save As...");
-
         fileSaveAs.setOnAction(this::onSaveAs);
 
         final MenuItem fileSaveGlyphAs = new MenuItem("Save Glyph As...");
-
         fileSaveGlyphAs.setOnAction(this::onSaveGlyphAs);
+
+        final MenuItem fileSaveConfig = new MenuItem("Save Config");
+        fileSaveConfig.setOnAction(this::onSaveConfig);
+
+        final MenuItem fileResetConfig = new MenuItem("Reset Config");
+        fileResetConfig.setOnAction(this::onResetConfig);
 
         final MenuItem fileExit = new MenuItem("Exit");
         fileExit.setOnAction((e) -> Platform.exit());
 
-        menuFile.getItems().addAll(fileSaveAs, fileSaveGlyphAs, new SeparatorMenuItem(), fileExit);
+        menuFile.getItems().addAll(
+            fileSaveAs,
+            //fileSaveGlyphAs,
+            new SeparatorMenuItem(),
+            fileSaveConfig,
+            new SeparatorMenuItem(),
+            fileResetConfig,
+            new SeparatorMenuItem(),
+            fileExit
+        );
 
         menuBar.getMenus().addAll(menuFile);
 
         return menuBar;
+    }
+
+    private void onResetConfig(ActionEvent actionEvent) {
+        try {
+            loadConfig(true);
+        } catch (Exception ex) {
+            showError("Config resetting failed!", ex);
+        }
+    }
+
+    private void onSaveConfig(ActionEvent actionEvent) {
+        try {
+            saveConfig();
+        } catch (Exception ex) {
+            showError("Config save failed!", ex);
+        }
     }
 
     /**
@@ -492,6 +543,8 @@ public class SpriteFontBuilderApp extends Application {
 
             bitmapTab.setContent(pane);
             tabPane.getSelectionModel().select(bitmapTab);
+
+            saveConfig();
         } catch (Exception ex) {
             showWarning(ex.getMessage());
         }
