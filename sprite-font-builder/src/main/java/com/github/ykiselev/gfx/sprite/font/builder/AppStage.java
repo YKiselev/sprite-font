@@ -1,7 +1,7 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
 import com.github.ykiselev.gfx.sprite.font.SpriteFontAndImage;
-import com.github.ykiselev.gfx.sprite.font.SpriteFontBuilder;
+import com.github.ykiselev.gfx.sprite.font.SpriteFontReceipt;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
@@ -22,9 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
@@ -44,6 +46,8 @@ public final class AppStage {
     private final CharacterRangeTab characterRangeTab;
 
     private final BitmapTab bitmapTab;
+
+    private SpriteFontReceipt receipt;
 
     private SpriteFontAndImage spriteFontAndImage;
 
@@ -65,7 +69,7 @@ public final class AppStage {
         final BorderPane borderPane = new BorderPane();
         borderPane.setTop(createMenu());
 
-        bitmapTab = new BitmapTab(stage);
+        bitmapTab = new BitmapTab();
         fontSettingTab = new FontSettingTab(leftPaneWidth);
         characterRangeTab = new CharacterRangeTab();
         tabPane.getTabs().addAll(
@@ -73,6 +77,13 @@ public final class AppStage {
                 characterRangeTab.tab(),
                 bitmapTab.tab()
         );
+        tabPane.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((observable, oldValue, newValue) -> {
+                    if (newValue == bitmapTab.tab()) {
+                        ensureBitmap();
+                    }
+                });
         borderPane.setCenter(tabPane);
 
         loadConfig(false);
@@ -84,6 +95,31 @@ public final class AppStage {
         stage.setMinWidth(400);
         stage.setMinHeight(200);
         stage.show();
+    }
+
+    private SpriteFontReceipt createReceipt() {
+        return new SpriteFontReceipt(
+                fontSettingTab.getSelectedFont(),
+                characterRangeTab.getCharRanges(),
+                characterRangeTab.getDefaultCharacter(),
+                characterRangeTab.getGlyphBorderWidth(),
+                characterRangeTab.getGlyphBorderHeight()
+        );
+    }
+
+    private void ensureBitmap() {
+        try {
+            final SpriteFontReceipt newReceipt = createReceipt();
+            if (Objects.equals(receipt, newReceipt)) {
+                return;
+            }
+            receipt = newReceipt;
+            spriteFontAndImage = newReceipt.build();
+            bitmapTab.show(spriteFontAndImage.getImage());
+            saveConfig();
+        } catch (Exception ex) {
+            showError("Operation failed!", ex);
+        }
     }
 
     private void loadConfig(boolean reset) {
@@ -106,28 +142,24 @@ public final class AppStage {
         bitmapTab.load(cfg);
     }
 
-    private void saveConfig() {
+    private void saveConfig() throws FileNotFoundException {
         final Config state = config.getConfig("sprite-font-builder.state");
-        try {
-            final Config newConfig = ConfigFactory.empty()
-                    .withValue(
-                            "sprite-font-builder.state",
-                            bitmapTab.save(
-                                    characterRangeTab.save(
-                                            fontSettingTab.save(state)
-                                    )
-                            ).root()
-                    );
-            final ConfigRenderOptions options = ConfigRenderOptions.concise()
-                    .setComments(false)
-                    .setFormatted(true)
-                    .setJson(false);
+        final Config newConfig = ConfigFactory.empty()
+                .withValue(
+                        "sprite-font-builder.state",
+                        bitmapTab.save(
+                                characterRangeTab.save(
+                                        fontSettingTab.save(state)
+                                )
+                        ).root()
+                );
+        final ConfigRenderOptions options = ConfigRenderOptions.concise()
+                .setComments(false)
+                .setFormatted(true)
+                .setJson(false);
 
-            try (PrintWriter writer = new PrintWriter(getConfigFile())) {
-                writer.write(newConfig.root().render(options));
-            }
-        } catch (Exception ex) {
-            logger.error("Failed to save config!", ex);
+        try (PrintWriter writer = new PrintWriter(getConfigFile())) {
+            writer.write(newConfig.root().render(options));
         }
     }
 
@@ -138,8 +170,7 @@ public final class AppStage {
     private MenuBar createMenu() {
         final MenuBar menuBar = new MenuBar();
         menuBar.getMenus().addAll(
-                createFileMenu(),
-                createBitmapMenu()
+                createFileMenu()
         );
         return menuBar;
     }
@@ -148,8 +179,6 @@ public final class AppStage {
         final Menu menuFile = new Menu("File");
         final MenuItem fileSaveAs = new MenuItem("Save As...");
         fileSaveAs.setOnAction(this::onSaveAs);
-        final MenuItem fileSaveGlyphAs = new MenuItem("Save Glyph As...");
-        fileSaveGlyphAs.setOnAction(this::onSaveGlyphAs);
         final MenuItem fileSaveConfig = new MenuItem("Save Config");
         fileSaveConfig.setOnAction(this::onSaveConfig);
         final MenuItem fileResetConfig = new MenuItem("Reset Config");
@@ -158,7 +187,6 @@ public final class AppStage {
         fileExit.setOnAction((e) -> Platform.exit());
         menuFile.getItems().addAll(
                 fileSaveAs,
-                //fileSaveGlyphAs,
                 new SeparatorMenuItem(),
                 fileSaveConfig,
                 new SeparatorMenuItem(),
@@ -169,37 +197,11 @@ public final class AppStage {
         return menuFile;
     }
 
-    private Menu createBitmapMenu() {
-        final Menu menuBitmap = new Menu("Bitmap");
-        final MenuItem bitmapRebuild = new MenuItem("Rebuild");
-        bitmapRebuild.setOnAction(this::onRebuildBitmap);
-        menuBitmap.getItems().add(bitmapRebuild);
-        return menuBitmap;
-    }
-
-    private void onRebuildBitmap(ActionEvent actionEvent) {
-        try {
-            final SpriteFontBuilder builder = SpriteFontBuilder.create(
-                    fontSettingTab.getSelectedFont(),
-                    characterRangeTab.getCharRanges(),
-                    characterRangeTab.getDefaultCharacter(),
-                    characterRangeTab.getGlyphBorderWidth(),
-                    characterRangeTab.getGlyphBorderHeight()
-            );
-            spriteFontAndImage = builder.build();
-            bitmapTab.show(spriteFontAndImage.getImage());
-            tabPane.getSelectionModel().select(bitmapTab.tab());
-            saveConfig();
-        } catch (Exception ex) {
-            showError("Config resetting failed!", ex);
-        }
-    }
-
     private void onResetConfig(ActionEvent actionEvent) {
         try {
             loadConfig(true);
         } catch (Exception ex) {
-            showError("Config resetting failed!", ex);
+            showError("Failed to reset config!", ex);
         }
     }
 
@@ -207,38 +209,13 @@ public final class AppStage {
         try {
             saveConfig();
         } catch (Exception ex) {
-            showError("Config save failed!", ex);
-        }
-    }
-
-    /**
-     * Debug method
-     */
-    private void onSaveGlyphAs(ActionEvent actionEvent) {
-        try {
-            if (spriteFontAndImage != null) {
-                final FileChooser dlg = new FileChooser();
-                dlg.setTitle("Save Glyph Image");
-                dlg.setInitialFileName("char_g.png");
-                dlg.getExtensionFilters().clear();
-                dlg.getExtensionFilters().add(
-                        new FileChooser.ExtensionFilter("Png files", "*.png")
-                );
-                final File file = dlg.showSaveDialog(appStage);
-                if (file != null) {
-                    spriteFontAndImage.saveGlyphImage('g', file);
-                }
-            } else {
-                showWarning("There is nothing to save!");
-            }
-        } catch (Exception ex) {
-            logger.error("Glyph save failed!", ex);
-            showError("Glyph save failed!", ex);
+            showError("Failed to save config!", ex);
         }
     }
 
     private void onSaveAs(ActionEvent e) {
         try {
+            ensureBitmap();
             if (spriteFontAndImage != null) {
                 final FileChooser dlg = new FileChooser();
                 dlg.setTitle("Save Sprite Font");

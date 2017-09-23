@@ -31,10 +31,6 @@ public final class SpriteFontAndImage {
         return name;
     }
 
-    public SpriteFont getInfo() {
-        return info;
-    }
-
     public WritableImage getImage() {
         return image;
     }

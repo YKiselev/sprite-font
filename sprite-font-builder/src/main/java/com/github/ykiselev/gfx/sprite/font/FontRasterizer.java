@@ -20,7 +20,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBoundsType;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,9 +33,7 @@ import java.util.stream.Collectors;
 /**
  * Created by Uze on 07.01.2015.
  */
-public final class SpriteFontBuilder {
-
-    private static final int BUF_SIZE = 16 * 1024;
+public final class FontRasterizer {
 
     private static final int MAX_GLYPH_BORDER = 10;
 
@@ -53,7 +51,7 @@ public final class SpriteFontBuilder {
 
     private int fontHeight;
 
-    private SpriteFontBuilder(Font font, char[] characters, int defaultCharacterIndex, int glyphXBorder, int glyphYBorder) {
+    public FontRasterizer(Font font, char[] characters, int defaultCharacterIndex, int glyphXBorder, int glyphYBorder) {
         if (glyphXBorder < 0 || glyphXBorder > MAX_GLYPH_BORDER) {
             throw new IllegalArgumentException("glyphXBorder");
         }
@@ -61,42 +59,36 @@ public final class SpriteFontBuilder {
             throw new IllegalArgumentException("glyphYBorder");
         }
         this.font = font;
-        this.characters = characters;
+        this.characters = characters.clone();
         this.defaultCharacterIndex = defaultCharacterIndex;
         this.glyphXBorder = glyphXBorder;
         this.glyphYBorder = glyphYBorder;
     }
 
-    public static SpriteFontBuilder create(Font font, List<CharRange> ranges, char defaultCharacter, int glyphXBorder, int glyphYBorder) {
+    public static SpriteFontAndImage create(Font font, List<CharRange> ranges, char defaultCharacter, int glyphXBorder, int glyphYBorder) {
         final Set<Character> uniqueCharacters = ranges.stream()
                 .map(CharRange::get)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
-
         uniqueCharacters.add(defaultCharacter);
-
         final char[] chars = new char[uniqueCharacters.size()];
         int i = 0;
         for (Character ch : uniqueCharacters) {
             chars[i] = ch;
             i++;
         }
-
         Arrays.sort(chars);
-
         final int defaultCharacterIndex = Arrays.binarySearch(chars, defaultCharacter);
-
-        return new SpriteFontBuilder(font, chars, defaultCharacterIndex, glyphXBorder, glyphYBorder);
+        return new FontRasterizer(font, chars, defaultCharacterIndex, glyphXBorder, glyphYBorder).build();
     }
 
     public SpriteFontAndImage build() {
         final int[] widths = measureCharacters();
         final Canvas canvas = createCanvas(widths);
-        final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
-
         final SnapshotParameters snapshotParameters = new SnapshotParameters();
         snapshotParameters.setFill(Color.color(0, 0, 0, 0));
-
+        // Note: render glyphs before taking image snapshot
+        final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
         final WritableImage image = canvas.snapshot(snapshotParameters, null);
         final SpriteFont spriteFont = new SpriteFont(
                 fontHeight,
@@ -122,7 +114,7 @@ public final class SpriteFontBuilder {
             final Graphics2D pic = grayImage.createGraphics();
             pic.drawImage(bufferedImage, 0, 0, null);
             pic.dispose();
-            try (ByteArrayOutputStream os = new ByteArrayOutputStream(BUF_SIZE)) {
+            try (ByteArrayOutputStream os = new ByteArrayOutputStream(16 * 1024)) {
                 ImageIO.write(grayImage, "png", os);
                 return os.toByteArray();
             }

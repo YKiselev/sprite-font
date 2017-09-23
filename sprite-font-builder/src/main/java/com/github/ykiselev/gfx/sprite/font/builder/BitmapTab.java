@@ -7,13 +7,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
@@ -22,15 +15,12 @@ public final class BitmapTab implements BuilderTab {
 
     private final Tab tab = new Tab("Font Bitmap");
 
-    private final Stage stage;
-
     @Override
     public Tab tab() {
         return tab;
     }
 
-    public BitmapTab(Stage stage) {
-        this.stage = requireNonNull(stage);
+    public BitmapTab() {
         tab.setClosable(false);
     }
 
@@ -40,20 +30,6 @@ public final class BitmapTab implements BuilderTab {
         imageView.setBlendMode(BlendMode.EXCLUSION);
         imageView.setCache(true);
         final ScrollPane scrollPane = new ScrollPane(imageView);
-//        final BorderPane pane = new BorderPane(imageView);
-//        pane.setBackground(
-//                new Background(new BackgroundFill(Color.WHITE, null, null))
-//        );
-//        stage.widthProperty().addListener((observable, oldValue, newValue) -> {
-//            imageView.setFitWidth(
-//                    Math.min(image.getWidth(), Math.max(0, newValue.doubleValue() - 10))
-//            );
-//        });
-//        stage.heightProperty().addListener((observable, oldValue, newValue) -> {
-//            imageView.setFitHeight(
-//                    Math.min(image.getHeight(), Math.max(0, newValue.doubleValue() - 10))
-//            );
-//        });
         tab.setContent(scrollPane);
         tab.setTooltip(new Tooltip("Bitmap size: " + image.getWidth() + ":" + image.getHeight()));
     }
