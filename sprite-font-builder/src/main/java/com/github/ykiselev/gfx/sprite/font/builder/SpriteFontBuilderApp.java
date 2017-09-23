@@ -8,11 +8,12 @@ import javafx.stage.Stage;
  */
 public class SpriteFontBuilderApp extends Application {
 
-    private AppStage appStage;
-
     @Override
     public void start(Stage stage) throws Exception {
-        appStage = new AppStage(stage, 250.0);
+        new AppStage(stage, 250.0);
     }
 
+    public static void main(String[] args) {
+        Application.launch(SpriteFontBuilderApp.class, args);
+    }
 }
