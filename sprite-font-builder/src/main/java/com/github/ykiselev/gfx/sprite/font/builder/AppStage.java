@@ -47,11 +47,17 @@ public final class AppStage {
 
     private SpriteFontAndImage spriteFontAndImage;
 
-    private static final FileChooser.ExtensionFilter JAR_EXT_FILTER = new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar");
+    private static final FileChooser.ExtensionFilter BIN_EXT_FILTER = new FileChooser.ExtensionFilter("Sprite Font (*.sf)", "*.sf");
+
+    private static final FileChooser.ExtensionFilter PNG_EXT_FILTER = new FileChooser.ExtensionFilter("Font Sprite As Png Image (*.png)", "*.png");
+
+    private static final FileChooser.ExtensionFilter JSON_EXT_FILTER = new FileChooser.ExtensionFilter("Sprite Font Description As Json (*.json)", "*.json");
 
     private final TabPane tabPane = new TabPane();
 
     private Config config;
+
+    private File directory;
 
     public AppStage(Stage stage, double leftPaneWidth) throws Exception {
         this.appStage = stage;
@@ -215,8 +221,9 @@ public final class AppStage {
                 dlg.setTitle("Save Glyph Image");
                 dlg.setInitialFileName("char_g.png");
                 dlg.getExtensionFilters().clear();
-                dlg.getExtensionFilters().add(new FileChooser.ExtensionFilter("Png files", "png"));
-
+                dlg.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("Png files", "*.png")
+                );
                 final File file = dlg.showSaveDialog(appStage);
                 if (file != null) {
                     spriteFontAndImage.saveGlyphImage('g', file);
@@ -235,13 +242,22 @@ public final class AppStage {
             if (spriteFontAndImage != null) {
                 final FileChooser dlg = new FileChooser();
                 dlg.setTitle("Save Sprite Font");
-                dlg.setInitialFileName(spriteFontAndImage.getName() + ".jar");
+                dlg.setInitialDirectory(directory);
+                dlg.setInitialFileName(spriteFontAndImage.getName());
                 dlg.getExtensionFilters().clear();
-                dlg.getExtensionFilters().add(JAR_EXT_FILTER);
+                dlg.getExtensionFilters().addAll(BIN_EXT_FILTER, PNG_EXT_FILTER, JSON_EXT_FILTER);
                 final File file = dlg.showSaveDialog(appStage);
                 if (file != null) {
+                    directory = file.getParentFile();
+                    final FileChooser.ExtensionFilter filter = dlg.getSelectedExtensionFilter();
                     try (FileOutputStream os = new FileOutputStream(file)) {
-                        spriteFontAndImage.saveToStream(os);
+                        if (filter == BIN_EXT_FILTER) {
+                            spriteFontAndImage.saveSpriteFont(os);
+                        } else if (filter == PNG_EXT_FILTER) {
+                            spriteFontAndImage.savePng(os);
+                        } else if (filter == JSON_EXT_FILTER) {
+                            spriteFontAndImage.saveJson(os);
+                        }
                     }
                 }
             } else {

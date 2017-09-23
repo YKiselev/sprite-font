@@ -1,6 +1,7 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
 import com.typesafe.config.Config;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.BlendMode;
@@ -9,7 +10,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
@@ -39,21 +39,22 @@ public final class BitmapTab implements BuilderTab {
         imageView.setPreserveRatio(true);
         imageView.setBlendMode(BlendMode.EXCLUSION);
         imageView.setCache(true);
-        final BorderPane pane = new BorderPane(imageView);
-        pane.setBackground(
-                new Background(new BackgroundFill(Color.WHITE, null, null))
-        );
-        stage.widthProperty().addListener((observable, oldValue, newValue) -> {
-            imageView.setFitWidth(
-                    Math.min(image.getWidth(), newValue.doubleValue())
-            );
-        });
-        stage.heightProperty().addListener((observable, oldValue, newValue) -> {
-            imageView.setFitHeight(
-                    Math.min(image.getHeight(), newValue.doubleValue())
-            );
-        });
-        tab.setContent(pane);
+        final ScrollPane scrollPane = new ScrollPane(imageView);
+//        final BorderPane pane = new BorderPane(imageView);
+//        pane.setBackground(
+//                new Background(new BackgroundFill(Color.WHITE, null, null))
+//        );
+//        stage.widthProperty().addListener((observable, oldValue, newValue) -> {
+//            imageView.setFitWidth(
+//                    Math.min(image.getWidth(), Math.max(0, newValue.doubleValue() - 10))
+//            );
+//        });
+//        stage.heightProperty().addListener((observable, oldValue, newValue) -> {
+//            imageView.setFitHeight(
+//                    Math.min(image.getHeight(), Math.max(0, newValue.doubleValue() - 10))
+//            );
+//        });
+        tab.setContent(scrollPane);
         tab.setTooltip(new Tooltip("Bitmap size: " + image.getWidth() + ":" + image.getHeight()));
     }
 

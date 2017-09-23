@@ -6,16 +6,15 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
 
 import javax.imageio.ImageIO;
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by Uze on 07.01.2015.
@@ -46,27 +45,45 @@ public final class SpriteFontAndImage {
         this.image = image;
     }
 
-    public void saveToStream(OutputStream outputStream) throws IOException {
-        final Manifest manifest = new Manifest();
-
-        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-
-        final String basePath = "fonts/sprite/";
-
-        try (JarOutputStream os = new JarOutputStream(outputStream, manifest)) {
-            os.putNextEntry(
-                    new JarEntry(basePath + name + ".bin")
-            );
-            os.write(toBytes(info));
-            os.closeEntry();
+    public void saveSpriteFont(OutputStream os) throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(os)) {
+            oos.writeObject(info);
         }
     }
 
-    private byte[] toBytes(SpriteFont font) throws IOException {
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(os)) {
-            oos.writeObject(font);
-            return os.toByteArray();
+    public void savePng(OutputStream os) throws IOException {
+        os.write(info.bitmap());
+    }
+
+    public void saveJson(OutputStream os) throws IOException {
+        final JsonObjectBuilder builder = Json.createObjectBuilder()
+                .add("fontHeight", info.fontHeight())
+                .add("defaultCharacterIndex", info.defaultCharacterIndex())
+                .add("glyphXBorder", info.glyphXBorder())
+                .add("glyphYBorder", info.glyphYBorder());
+        if (info.characterWidth() > 0) {
+            builder.add("characterWidth", info.characterWidth());
         }
+        if (info.lineInterval() > 0) {
+            builder.add("lineInterval", info.lineInterval());
+        }
+        final JsonArrayBuilder ab = Json.createArrayBuilder();
+        for (Glyph glyph : info.glyphs()) {
+            final JsonObjectBuilder b = Json.createObjectBuilder();
+            b.add("character", glyph.character())
+                    .add("x", glyph.x())
+                    .add("y", glyph.y());
+            if (glyph.width() > 0) {
+                b.add("width", glyph.width());
+            }
+            ab.add(b);
+        }
+        builder.add("glyphs", ab.build());
+        os.write(
+                builder.build()
+                        .toString()
+                        .getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     public void saveGlyphImage(char value, File destFile) throws IOException {
