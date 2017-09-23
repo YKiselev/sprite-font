@@ -1,6 +1,6 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
-import com.google.common.base.Joiner;
+import com.github.ykiselev.gfx.sprite.font.SpriteFontAndImage;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
@@ -11,12 +11,35 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
@@ -25,7 +48,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.ykiselev.gfx.sprite.font.SpriteFontHolder;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,26 +64,46 @@ import java.util.stream.Collectors;
  */
 public class SpriteFontBuilderApp extends Application {
 
-    public static final double COMBO_BOX_WIDTH = 200.0;
-    public static final String APP_TITLE = "Sprite Font Builder";
-    public static final String FONT_BUILDER_APP_CONF = "font-builder-app.conf";
+    private static final double COMBO_BOX_WIDTH = 200.0;
+
+    private static final String APP_TITLE = "Sprite Font Builder";
+
+    private static final String FONT_BUILDER_APP_CONF = "font-builder-app.conf";
+
     private final Logger logger = LoggerFactory.getLogger(SpriteFontBuilderApp.class);
+
     private Stage appStage;
+
     private final Tab bitmapTab = new Tab("Font Bitmap");
+
     private final ComboBox<FontWeight> fontWeightComboBox = new ComboBox<>();
+
     private final ComboBox<FontPosture> fontPostureComboBox = new ComboBox<>();
+
     private final ComboBox<Integer> fontSizeComboBox = new ComboBox<>();
+
     private final Text example = new Text();
+
     private final TextField exampleText = new TextField();
+
     private final ListView<String> fontListView = new ListView<>();
+
     private double leftPaneWidth = 200.0;
+
     private final TextArea charRanges = new TextArea("32-126\n1025\n1040-1105\n9650\n9660");
+
     private final TextField defaultCharacterField = new TextField("?");
-    private SpriteFontHolder spriteFontHolder;
-    public static final FileChooser.ExtensionFilter JAR_EXT_FILTER = new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar");
+
+    private SpriteFontAndImage spriteFontAndImage;
+
+    private static final FileChooser.ExtensionFilter JAR_EXT_FILTER = new FileChooser.ExtensionFilter("Jar archives (*.jar)", "jar");
+
     private TextField borderWidthField = new TextField("0");
+
     private TextField borderHeightField = new TextField("0");
+
     private TabPane tabPane = new TabPane();
+
     private Config config;
 
     @Override
@@ -95,7 +137,7 @@ public class SpriteFontBuilderApp extends Application {
             final File file = getConfigFile();
             if (file.exists()) {
                 config = ConfigFactory.parseFile(file)
-                    .withFallback(config);
+                        .withFallback(config);
             }
         } else {
             final File file = getConfigFile();
@@ -137,7 +179,7 @@ public class SpriteFontBuilderApp extends Application {
         }
 
         try {
-            charRanges.setText(Joiner.on('\n').join(state.getStringList("glyph.character-ranges")));
+            charRanges.setText(String.join("\n", state.getStringList("glyph.character-ranges")));
         } catch (Exception ex) {
             logger.warn("Failed to load character ranges: {}", ex);
         }
@@ -170,22 +212,21 @@ public class SpriteFontBuilderApp extends Application {
         final Config state = config.getConfig("sprite-font-builder.state");
         try {
             Config newState = state.withValue("font.name", ConfigValueFactory.fromAnyRef(fontListView.getSelectionModel().getSelectedItem()))
-                .withValue("font.weight", ConfigValueFactory.fromAnyRef(ObjectUtils.toString(fontWeightComboBox.getSelectionModel().getSelectedItem())))
-                .withValue("font.posture", ConfigValueFactory.fromAnyRef(ObjectUtils.toString(fontPostureComboBox.getSelectionModel().getSelectedItem())))
-                .withValue("font.size", ConfigValueFactory.fromAnyRef(fontSizeComboBox.getSelectionModel().getSelectedItem()))
-                .withValue("glyph.character-ranges",
-                    ConfigValueFactory.fromIterable(Arrays.asList(StringUtils.split(charRanges.getText(), "[\\r\\n]+")))
-                )
-                .withValue("glyph.default-character", ConfigValueFactory.fromAnyRef(defaultCharacterField.getText()))
-                .withValue("glyph.border.width", ConfigValueFactory.fromAnyRef(borderWidthField.getText()))
-                .withValue("glyph.border.height", ConfigValueFactory.fromAnyRef(borderHeightField.getText()));
+                    .withValue("font.weight", ConfigValueFactory.fromAnyRef(ObjectUtils.toString(fontWeightComboBox.getSelectionModel().getSelectedItem())))
+                    .withValue("font.posture", ConfigValueFactory.fromAnyRef(ObjectUtils.toString(fontPostureComboBox.getSelectionModel().getSelectedItem())))
+                    .withValue("font.size", ConfigValueFactory.fromAnyRef(fontSizeComboBox.getSelectionModel().getSelectedItem()))
+                    .withValue("glyph.character-ranges",
+                            ConfigValueFactory.fromIterable(Arrays.asList(StringUtils.split(charRanges.getText(), "[\\r\\n]+")))
+                    ).withValue("glyph.default-character", ConfigValueFactory.fromAnyRef(defaultCharacterField.getText()))
+                    .withValue("glyph.border.width", ConfigValueFactory.fromAnyRef(borderWidthField.getText()))
+                    .withValue("glyph.border.height", ConfigValueFactory.fromAnyRef(borderHeightField.getText()));
 
             final Config newConfig = ConfigFactory.empty()
-                .withValue("sprite-font-builder.state", newState.root());
+                    .withValue("sprite-font-builder.state", newState.root());
             final ConfigRenderOptions options = ConfigRenderOptions.concise()
-                .setComments(false)
-                .setFormatted(true)
-                .setJson(false);
+                    .setComments(false)
+                    .setFormatted(true)
+                    .setJson(false);
 
             try (PrintWriter writer = new PrintWriter(getConfigFile())) {
                 writer.write(newConfig.root().render(options));
@@ -227,11 +268,11 @@ public class SpriteFontBuilderApp extends Application {
         buildBtn.setOnAction((e) -> onBuildFontSprite());
 
         vbox.getChildren().addAll(new Label("Character ranges:"), charRanges,
-            new HBox(4.0,
-                new Label("Default character:"), defaultCharacterField,
-                new Label("Border width:"), borderWidthField,
-                new Label("Border height:"), borderHeightField),
-            buildBtn);
+                new HBox(4.0,
+                        new Label("Default character:"), defaultCharacterField,
+                        new Label("Border width:"), borderWidthField,
+                        new Label("Border height:"), borderHeightField),
+                buildBtn);
 
         return result;
     }
@@ -309,9 +350,9 @@ public class SpriteFontBuilderApp extends Application {
         example.setFocusTraversable(false);
 
         rightBox.getChildren().addAll(fontWeightLabel, fontWeightComboBox,
-            fontPostureLabel, fontPostureComboBox,
-            fontSizeLabel, fontSizeComboBox,
-            exampleText, example);
+                fontPostureLabel, fontPostureComboBox,
+                fontSizeLabel, fontSizeComboBox,
+                exampleText, example);
 
         fontListView.getSelectionModel().selectFirst();
 
@@ -339,14 +380,14 @@ public class SpriteFontBuilderApp extends Application {
         fileExit.setOnAction((e) -> Platform.exit());
 
         menuFile.getItems().addAll(
-            fileSaveAs,
-            //fileSaveGlyphAs,
-            new SeparatorMenuItem(),
-            fileSaveConfig,
-            new SeparatorMenuItem(),
-            fileResetConfig,
-            new SeparatorMenuItem(),
-            fileExit
+                fileSaveAs,
+                //fileSaveGlyphAs,
+                new SeparatorMenuItem(),
+                fileSaveConfig,
+                new SeparatorMenuItem(),
+                fileResetConfig,
+                new SeparatorMenuItem(),
+                fileExit
         );
 
         menuBar.getMenus().addAll(menuFile);
@@ -381,10 +422,10 @@ public class SpriteFontBuilderApp extends Application {
             fileChooser1.getExtensionFilters().clear();
             fileChooser1.getExtensionFilters().add(new FileChooser.ExtensionFilter("Png files", "png"));
 
-            if (spriteFontHolder != null) {
+            if (spriteFontAndImage != null) {
                 final File file = fileChooser1.showSaveDialog(appStage);
                 if (file != null) {
-                    spriteFontHolder.saveGlyphImage('g', file);
+                    spriteFontAndImage.saveGlyphImage('g', file);
                 }
             } else {
                 showWarning("There is nothing to save!");
@@ -403,10 +444,10 @@ public class SpriteFontBuilderApp extends Application {
             items = Font.getFamilies();
         } else {
             items = Font.getFamilies()
-                .stream()
-                .filter((s) -> s.toUpperCase().startsWith(prefix))
-                .sorted()
-                .collect(Collectors.toList());
+                    .stream()
+                    .filter((s) -> s.toUpperCase().startsWith(prefix))
+                    .sorted()
+                    .collect(Collectors.toList());
         }
         fontListView.setItems(FXCollections.observableList(items));
         fontListView.getSelectionModel().select(selectedItem);
@@ -419,15 +460,15 @@ public class SpriteFontBuilderApp extends Application {
         try {
             final FileChooser fileChooser1 = new FileChooser();
             fileChooser1.setTitle("Save Image");
-            fileChooser1.setInitialFileName(spriteFontHolder.getName() + ".jar");
+            fileChooser1.setInitialFileName(spriteFontAndImage.getName() + ".jar");
             fileChooser1.getExtensionFilters().clear();
             fileChooser1.getExtensionFilters().add(JAR_EXT_FILTER);
 
-            if (spriteFontHolder != null) {
+            if (spriteFontAndImage != null) {
                 final File file = fileChooser1.showSaveDialog(appStage);
                 if (file != null) {
                     try (FileOutputStream os = new FileOutputStream(file)) {
-                        spriteFontHolder.saveToStream(os);
+                        spriteFontAndImage.saveToStream(os);
                     }
                 }
             } else {
@@ -441,16 +482,16 @@ public class SpriteFontBuilderApp extends Application {
 
     private void showWarning(String message) {
         Dialogs.create()
-            .title(APP_TITLE)
-            .message(message)
-            .showWarning();
+                .title(APP_TITLE)
+                .message(message)
+                .showWarning();
     }
 
     private void showError(String message, Throwable t) {
         Dialogs.create()
-            .title(APP_TITLE)
-            .message(message)
-            .showException(t);
+                .title(APP_TITLE)
+                .message(message)
+                .showException(t);
     }
 
     private void onNewFontSelected() {
@@ -464,10 +505,10 @@ public class SpriteFontBuilderApp extends Application {
 
     private Font getSelectedFont() {
         return Font.font(
-            getSelectedFontFamily(),
-            getSelectedFontWeight(),
-            getSelectedFontPosture(),
-            getSelectedFontSize()
+                getSelectedFontFamily(),
+                getSelectedFontWeight(),
+                getSelectedFontPosture(),
+                getSelectedFontSize()
         );
     }
 
@@ -523,16 +564,16 @@ public class SpriteFontBuilderApp extends Application {
         try {
             final List<CharRange> ranges = getCharRanges();
             final SpriteFontBuilder builder = SpriteFontBuilder.create(
-                getSelectedFont(),
-                ranges,
-                getDefaultCharacter(),
-                getGlyphBorderWidth(),
-                getGlyphBorderHeight()
+                    getSelectedFont(),
+                    ranges,
+                    getDefaultCharacter(),
+                    getGlyphBorderWidth(),
+                    getGlyphBorderHeight()
             );
 
-            spriteFontHolder = builder.build();
+            spriteFontAndImage = builder.build();
 
-            final ImageView imageView = new ImageView(spriteFontHolder.getImage());
+            final ImageView imageView = new ImageView(spriteFontAndImage.getImage());
 
             imageView.setPreserveRatio(true);
             imageView.setBlendMode(BlendMode.EXCLUSION);

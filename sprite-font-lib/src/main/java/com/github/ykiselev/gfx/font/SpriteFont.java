@@ -142,16 +142,16 @@ final class SpriteFontReplacement implements Serializable {
     }
 
     Object readResolve() throws ObjectStreamException {
-        return new SpriteFontBuilder()
-                .withFontHeight(fontHeight)
-                .withDefaultCharacterIndex(defaultCharacterIndex)
-                .withCharacterWidth(characterWidth)
-                .withGlyphs(toGlyphs(glyphs))
-                .withBitmap(bitmap)
-                .withLineInterval(lineInterval)
-                .withGlyphXBorder(glyphXBorder)
-                .withGlyphYBorder(glyphYBorder)
-                .createSpriteFont();
+        return new SpriteFont(
+                fontHeight,
+                defaultCharacterIndex,
+                characterWidth,
+                toGlyphs(glyphs),
+                bitmap,
+                lineInterval,
+                glyphXBorder,
+                glyphYBorder
+        );
     }
 
     private Glyph[] toGlyphs(int[] data) {

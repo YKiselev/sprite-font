@@ -1,4 +1,6 @@
-package com.github.ykiselev.gfx.font;
+package com.github.ykiselev.gfx.sprite.font.builder;
+
+import com.github.ykiselev.gfx.font.Glyph;
 
 public final class GlyphBuilder {
 

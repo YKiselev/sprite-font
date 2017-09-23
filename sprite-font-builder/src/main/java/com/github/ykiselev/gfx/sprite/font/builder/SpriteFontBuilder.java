@@ -1,7 +1,8 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
-import com.github.ykiselev.gfx.sprite.font.SpriteFontHolder;
-import com.google.common.base.Preconditions;
+import com.github.ykiselev.gfx.font.Glyph;
+import com.github.ykiselev.gfx.font.SpriteFont;
+import com.github.ykiselev.gfx.sprite.font.SpriteFontAndImage;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
@@ -10,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -17,8 +19,6 @@ import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBoundsType;
-import com.github.ykiselev.gfx.font.Glyph;
-import com.github.ykiselev.gfx.font.GlyphBuilder;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -34,11 +34,11 @@ import java.util.stream.Collectors;
 /**
  * Created by Uze on 07.01.2015.
  */
-public class SpriteFontBuilder {
+public final class SpriteFontBuilder {
 
-    public static final int BUF_SIZE = 16 * 1024;
+    private static final int BUF_SIZE = 16 * 1024;
 
-    public static final int MAX_GLYPH_BORDER = 10;
+    private static final int MAX_GLYPH_BORDER = 10;
 
     private final Font font;
 
@@ -55,9 +55,12 @@ public class SpriteFontBuilder {
     private int fontHeight;
 
     private SpriteFontBuilder(Font font, char[] characters, int defaultCharacterIndex, int glyphXBorder, int glyphYBorder) {
-        Preconditions.checkArgument(glyphXBorder >= 0 && glyphXBorder <= MAX_GLYPH_BORDER);
-        Preconditions.checkArgument(glyphYBorder >= 0 && glyphYBorder <= MAX_GLYPH_BORDER);
-
+        if (glyphXBorder < 0 || glyphXBorder > MAX_GLYPH_BORDER) {
+            throw new IllegalArgumentException("glyphXBorder");
+        }
+        if (glyphYBorder < 0 || glyphYBorder > MAX_GLYPH_BORDER) {
+            throw new IllegalArgumentException("glyphYBorder");
+        }
         this.font = font;
         this.characters = characters;
         this.defaultCharacterIndex = defaultCharacterIndex;
@@ -87,7 +90,7 @@ public class SpriteFontBuilder {
         return new SpriteFontBuilder(font, chars, defaultCharacterIndex, glyphXBorder, glyphYBorder);
     }
 
-    public SpriteFontHolder build() {
+    public SpriteFontAndImage build() {
         final int[] widths = measureCharacters();
         final Canvas canvas = createCanvas(widths);
         final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
@@ -96,28 +99,20 @@ public class SpriteFontBuilder {
         snapshotParameters.setFill(Color.color(0, 0, 0, 0));
 
         final WritableImage image = canvas.snapshot(snapshotParameters, null);
+        final SpriteFont spriteFont = new SpriteFont(
+                fontHeight,
+                defaultCharacterIndex,
+                characterWidth,
+                glyphs,
+                toPngBytes(image),
+                0,
+                glyphXBorder,
+                glyphYBorder
+        );
+        return new SpriteFontAndImage(font.getName(), spriteFont, image);
+    }
 
-        final com.github.ykiselev.gfx.font.SpriteFontBuilder fontBuilder = new com.github.ykiselev.gfx.font.SpriteFontBuilder();
-
-        fontBuilder.withGlyphs(glyphs)
-                .withFontHeight(fontHeight);
-
-        if (defaultCharacterIndex >= 0) {
-            fontBuilder.withDefaultCharacterIndex(defaultCharacterIndex);
-        }
-
-        if (characterWidth > 0) {
-            fontBuilder.withCharacterWidth(characterWidth);
-        }
-
-        if (glyphXBorder > 0) {
-            fontBuilder.withGlyphXBorder(glyphXBorder);
-        }
-
-        if (glyphYBorder > 0) {
-            fontBuilder.withGlyphYBorder(glyphYBorder);
-        }
-
+    private byte[] toPngBytes(Image image) {
         final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
         try {
             final BufferedImage grayImage = new BufferedImage(
@@ -130,13 +125,11 @@ public class SpriteFontBuilder {
             pic.dispose();
             try (ByteArrayOutputStream os = new ByteArrayOutputStream(BUF_SIZE)) {
                 ImageIO.write(grayImage, "png", os);
-                fontBuilder.withBitmap(os.toByteArray());
+                return os.toByteArray();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        return new SpriteFontHolder(font.getName(), fontBuilder.createSpriteFont(), image);
     }
 
     private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
@@ -224,10 +217,15 @@ public class SpriteFontBuilder {
         if (value == 0) {
             return 0;
         }
-
-        Preconditions.checkArgument(value > 0);
-
-        return (int) Math.pow(2.0, Math.ceil(32 - Integer.numberOfLeadingZeros(value - 1)));
+        if (value <= 0) {
+            throw new IllegalArgumentException("Value should be positive!");
+        }
+        return (int) Math.pow(
+                2.0,
+                Math.ceil(
+                        32 - Integer.numberOfLeadingZeros(value - 1)
+                )
+        );
     }
 
     private Canvas createCanvas(int[] widths) {
@@ -235,10 +233,8 @@ public class SpriteFontBuilder {
         for (int w : widths) {
             totalWidth += w + glyphXBorder;
         }
-
         int rowWidth = nextPowerOfTwo((int) Math.sqrt(totalWidth));
         int rows;
-
         while (true) {
             rows = getRowCount(widths, rowWidth);
             if (rows == 0) {
@@ -252,14 +248,12 @@ public class SpriteFontBuilder {
                 }
             }
         }
-
         return new Canvas(rowWidth, nextPowerOfTwo(glyphYBorder + rows * (fontHeight + glyphYBorder)));
     }
 
     private int getRowCount(int[] widths, int maxRowWidth) {
         int result = 0;
         int currentWidth = glyphXBorder;
-
         for (int charWidth : widths) {
             if (charWidth > maxRowWidth) {
                 return 0;
@@ -270,11 +264,9 @@ public class SpriteFontBuilder {
                 currentWidth = glyphXBorder + charWidth;
             }
         }
-
         if (currentWidth > glyphXBorder) {
             result++;
         }
-
         return result;
     }
 }

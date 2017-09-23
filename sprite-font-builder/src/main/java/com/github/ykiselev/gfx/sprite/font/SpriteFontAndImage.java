@@ -20,7 +20,7 @@ import java.util.jar.Manifest;
 /**
  * Created by Uze on 07.01.2015.
  */
-public final class SpriteFontHolder {
+public final class SpriteFontAndImage {
 
     private final String name;
 
@@ -40,7 +40,7 @@ public final class SpriteFontHolder {
         return image;
     }
 
-    public SpriteFontHolder(String name, SpriteFont info, WritableImage image) {
+    public SpriteFontAndImage(String name, SpriteFont info, WritableImage image) {
         this.name = name;
         this.info = info;
         this.image = image;

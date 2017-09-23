@@ -7,18 +7,11 @@ import java.util.function.Supplier;
 /**
  * Created by Uze on 07.01.2015.
  */
-public class CharRange implements Supplier<List<Character>> {
+public final class CharRange implements Supplier<List<Character>> {
 
     private final char start;
+
     private final char end;
-
-    public char getStart() {
-        return start;
-    }
-
-    public char getEnd() {
-        return end;
-    }
 
     public int getLength() {
         return end - start + 1;

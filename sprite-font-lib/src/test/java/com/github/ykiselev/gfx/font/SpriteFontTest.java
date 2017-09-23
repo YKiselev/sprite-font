@@ -17,19 +17,19 @@ public class SpriteFontTest {
 
     @Test
     public void shouldSerialize() throws Exception {
-        final SpriteFont spriteFont = new SpriteFontBuilder()
-                .withFontHeight(14)
-                .withDefaultCharacterIndex(100)
-                .withLineInterval(2)
-                .withGlyphXBorder(1)
-                .withGlyphYBorder(2)
-                .withBitmap(new byte[]{1, 2, 3})
-                .withGlyphs(
-                        new Glyph[]{
-                                new Glyph(1, 2, 3, 4),
-                                new Glyph(2, 8, 3, 8)
-                        }
-                ).createSpriteFont();
+        final SpriteFont spriteFont = new SpriteFont(
+                14,
+                100,
+                10,
+                new Glyph[]{
+                        new Glyph(1, 2, 3, 4),
+                        new Glyph(2, 8, 3, 8)
+                },
+                new byte[]{1, 2, 3},
+                2,
+                3,
+                4
+        );
         final byte[] bytes;
         try (ByteArrayOutputStream os = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(os)) {
             oos.writeObject(spriteFont);
