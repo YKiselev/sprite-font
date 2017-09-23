@@ -13,6 +13,13 @@
     </modules>
     <packaging>pom</packaging>
 
+    <scm>
+        <connection>scm:git:https://github.com/YKiselev/sprite-font.git</connection>
+        <developerConnection>scm:git:git@github.com:YKiselev/sprite-font.git</developerConnection>
+        <url>https://github.com/YKiselev/sprite-font/tree/master</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
