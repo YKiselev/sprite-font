@@ -1,4 +1,4 @@
-package com.github.ykiselev.gfx.sprite.font.builder;
+package com.github.ykiselev.gfx.sprite.font;
 
 import java.util.ArrayList;
 import java.util.List;
