@@ -2,12 +2,14 @@ package org.uze.gfx.sprite.font;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
-import org.uze.gfx.font.proto.FontProtos;
+import org.uze.gfx.font.Glyph;
+import org.uze.gfx.font.SpriteFont;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -17,11 +19,11 @@ import java.util.jar.Manifest;
 /**
  * Created by Uze on 07.01.2015.
  */
-public class SpriteFontHolder {
+public final class SpriteFontHolder {
 
     private final String name;
 
-    private final FontProtos.SpriteFont info;
+    private final SpriteFont info;
 
     private final WritableImage image;
 
@@ -29,7 +31,7 @@ public class SpriteFontHolder {
         return name;
     }
 
-    public FontProtos.SpriteFont getInfo() {
+    public SpriteFont getInfo() {
         return info;
     }
 
@@ -37,7 +39,7 @@ public class SpriteFontHolder {
         return image;
     }
 
-    public SpriteFontHolder(String name, FontProtos.SpriteFont info, WritableImage image) {
+    public SpriteFontHolder(String name, SpriteFont info, WritableImage image) {
         this.name = name;
         this.info = info;
         this.image = image;
@@ -50,20 +52,25 @@ public class SpriteFontHolder {
 
         final String basePath = "fonts/sprite/";
 
-        try (JarOutputStream os = new JarOutputStream(outputStream, manifest)) {
-            JarEntry entry = new JarEntry(basePath + name + ".pbuf");
-            os.putNextEntry(entry);
-            info.writeTo(os);
+        try (JarOutputStream os = new JarOutputStream(outputStream, manifest); ObjectOutputStream oos = new ObjectOutputStream(os)) {
+            os.putNextEntry(
+                    new JarEntry(basePath + name + ".bin")
+            );
+            oos.writeObject(info);
             os.closeEntry();
         }
     }
 
     public void saveGlyphImage(char value, File destFile) throws IOException {
-        for (FontProtos.Glyph glyph : info.getGlyphList()) {
-            if (glyph.getCharacter() == value) {
+        for (Glyph glyph : info.glyphs()) {
+            if (glyph.character() == value) {
                 final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
-                final BufferedImage glyphImage = bufferedImage.getSubimage(glyph.getX(), glyph.getY(),
-                    glyph.hasWidth() ? glyph.getWidth() : info.getCharacterWidth(), info.getFontHeight());
+                final BufferedImage glyphImage = bufferedImage.getSubimage(
+                        glyph.x(),
+                        glyph.y(),
+                        glyph.width() != 0 ? glyph.width() : info.characterWidth(),
+                        info.fontHeight()
+                );
                 ImageIO.write(glyphImage, "png", destFile);
                 break;
             }

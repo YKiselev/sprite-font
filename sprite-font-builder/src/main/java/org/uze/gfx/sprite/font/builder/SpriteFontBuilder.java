@@ -1,7 +1,6 @@
 package org.uze.gfx.sprite.font.builder;
 
 import com.google.common.base.Preconditions;
-import com.google.protobuf.ByteString;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
@@ -13,9 +12,12 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.text.*;
-import org.uze.gfx.font.proto.FontProtos.Glyph;
-import org.uze.gfx.font.proto.FontProtos.SpriteFont;
+import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.text.TextBoundsType;
+import org.uze.gfx.font.Glyph;
+import org.uze.gfx.font.GlyphBuilder;
 import org.uze.gfx.sprite.font.SpriteFontHolder;
 
 import javax.imageio.ImageIO;
@@ -35,13 +37,21 @@ import java.util.stream.Collectors;
 public class SpriteFontBuilder {
 
     public static final int BUF_SIZE = 16 * 1024;
+
     public static final int MAX_GLYPH_BORDER = 10;
+
     private final Font font;
+
     private final char[] characters;
+
     private final int defaultCharacterIndex;
+
     private final int glyphXBorder;
+
     private final int glyphYBorder;
+
     private int characterWidth;
+
     private int fontHeight;
 
     private SpriteFontBuilder(Font font, char[] characters, int defaultCharacterIndex, int glyphXBorder, int glyphYBorder) {
@@ -57,9 +67,9 @@ public class SpriteFontBuilder {
 
     public static SpriteFontBuilder create(Font font, List<CharRange> ranges, char defaultCharacter, int glyphXBorder, int glyphYBorder) {
         final Set<Character> uniqueCharacters = ranges.stream()
-            .map(CharRange::get)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toSet());
+                .map(CharRange::get)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
 
         uniqueCharacters.add(defaultCharacter);
 
@@ -87,47 +97,46 @@ public class SpriteFontBuilder {
 
         final WritableImage image = canvas.snapshot(snapshotParameters, null);
 
-        final SpriteFont.Builder fontBuilder = SpriteFont.newBuilder();
+        final org.uze.gfx.font.SpriteFontBuilder fontBuilder = new org.uze.gfx.font.SpriteFontBuilder();
 
-        fontBuilder.addAllGlyph(Arrays.asList(glyphs))
-            .setFontHeight(fontHeight);
+        fontBuilder.withGlyphs(glyphs)
+                .withFontHeight(fontHeight);
 
         if (defaultCharacterIndex >= 0) {
-            fontBuilder.setDefaultCharacterIndex(defaultCharacterIndex);
+            fontBuilder.withDefaultCharacterIndex(defaultCharacterIndex);
         }
 
         if (characterWidth > 0) {
-            fontBuilder.setCharacterWidth(characterWidth);
+            fontBuilder.withCharacterWidth(characterWidth);
         }
 
         if (glyphXBorder > 0) {
-            fontBuilder.setGlyphXBorder(glyphXBorder);
+            fontBuilder.withGlyphXBorder(glyphXBorder);
         }
 
         if (glyphYBorder > 0) {
-            fontBuilder.setGlyphYBorder(glyphYBorder);
+            fontBuilder.withGlyphYBorder(glyphYBorder);
         }
 
         final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
         try {
             final BufferedImage grayImage = new BufferedImage(
-                bufferedImage.getWidth(null),
-                bufferedImage.getHeight(null),
-                BufferedImage.TYPE_BYTE_GRAY
+                    bufferedImage.getWidth(null),
+                    bufferedImage.getHeight(null),
+                    BufferedImage.TYPE_BYTE_GRAY
             );
             final Graphics2D pic = grayImage.createGraphics();
             pic.drawImage(bufferedImage, 0, 0, null);
             pic.dispose();
-
             try (ByteArrayOutputStream os = new ByteArrayOutputStream(BUF_SIZE)) {
                 ImageIO.write(grayImage, "png", os);
-                fontBuilder.setBitmap(ByteString.copyFrom(os.toByteArray()));
+                fontBuilder.withBitmap(os.toByteArray());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return new SpriteFontHolder(font.getName(), fontBuilder.build(), image);
+        return new SpriteFontHolder(font.getName(), fontBuilder.createSpriteFont(), image);
     }
 
     private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
@@ -141,7 +150,7 @@ public class SpriteFontBuilder {
         int x = glyphXBorder;
         int y = lineHeight;
         final Glyph[] glyphs = new Glyph[characters.length];
-        final Glyph.Builder builder = Glyph.newBuilder();
+        final GlyphBuilder builder = new GlyphBuilder();
 
         for (int i = 0; i < characters.length; i++) {
             final int w = widths[i] + glyphXBorder;
@@ -155,15 +164,15 @@ public class SpriteFontBuilder {
             ctx.fillText(String.valueOf(character), x, y);
 
             builder.clear()
-                .setCharacter(character)
-                .setX(x)
-                .setY(y - fontHeight);
+                    .withCharacter(character)
+                    .withX(x)
+                    .withY(y - fontHeight);
 
             if (characterWidth != widths[i]) {
-                builder.setWidth(widths[i]);
+                builder.withWidth(widths[i]);
             }
 
-            glyphs[i] = builder.build();
+            glyphs[i] = builder.createGlyph();
 
             x += w;
         }
