@@ -1,14 +1,9 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
 import com.github.ykiselev.gfx.sprite.font.CharRange;
-import com.github.ykiselev.gfx.sprite.font.events.BuildSprite;
-import com.github.ykiselev.gfx.sprite.font.events.LoadConfig;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueFactory;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
@@ -24,16 +19,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
  */
 public final class CharacterRangeTab implements BuilderTab {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private final EventBus eventBus;
 
     private final Tab tab = new Tab("Character ranges");
 
@@ -50,37 +41,30 @@ public final class CharacterRangeTab implements BuilderTab {
         return tab;
     }
 
-    public CharacterRangeTab(EventBus eventBus) {
-        this.eventBus = requireNonNull(eventBus);
+    public CharacterRangeTab() {
         tab.setClosable(false);
-
-        VBox vbox = new VBox(4.0);
+        final VBox vbox = new VBox(4.0);
         vbox.setPadding(new Insets(4.0));
         tab.setContent(vbox);
-
         charRanges.setEditable(true);
         charRanges.setMinHeight(120.0);
-
         defaultCharacterField.setMaxWidth(30.0);
         borderWidthField.setMaxWidth(30.0);
         borderHeightField.setMaxWidth(30.0);
 
-        final Button buildBtn = new Button("Build font sprite");
-        buildBtn.setOnAction((e) -> onBuildFontSprite());
-
-        vbox.getChildren().addAll(new Label("Character ranges:"), charRanges,
-                new HBox(4.0,
+        vbox.getChildren().addAll(
+                new Label("Character ranges:"), charRanges,
+                new HBox(
+                        4.0,
                         new Label("Default character:"), defaultCharacterField,
                         new Label("Border width:"), borderWidthField,
-                        new Label("Border height:"), borderHeightField),
-                buildBtn);
-
-        eventBus.register(this);
+                        new Label("Border height:"), borderHeightField
+                )
+        );
     }
 
-    @Subscribe
-    void load(LoadConfig event) {
-        final Config state = event.config();
+    @Override
+    public void load(Config state) {
         try {
             charRanges.setText(String.join("\n", state.getStringList("glyph.character-ranges")));
         } catch (Exception ex) {
@@ -122,22 +106,7 @@ public final class CharacterRangeTab implements BuilderTab {
         return config;
     }
 
-    private void onBuildFontSprite() {
-        try {
-            eventBus.post(
-                    new BuildSprite(
-                            getCharRanges(),
-                            getDefaultCharacter(),
-                            getGlyphBorderWidth(),
-                            getGlyphBorderHeight()
-                    )
-            );
-        } catch (Exception ex) {
-            AppStage.showWarning(ex.getMessage());
-        }
-    }
-
-    private char getDefaultCharacter() {
+    public char getDefaultCharacter() {
         final String value = defaultCharacterField.getText();
         if (StringUtils.isEmpty(value) || value.length() != 1) {
             throw new IllegalArgumentException("Bad default character: " + value);
@@ -145,7 +114,7 @@ public final class CharacterRangeTab implements BuilderTab {
         return value.charAt(0);
     }
 
-    private int getGlyphBorderWidth() {
+    public int getGlyphBorderWidth() {
         String value = borderWidthField.getText();
         if (StringUtils.isEmpty(value)) {
             value = "0";
@@ -157,7 +126,7 @@ public final class CharacterRangeTab implements BuilderTab {
         }
     }
 
-    private int getGlyphBorderHeight() {
+    public int getGlyphBorderHeight() {
         String value = borderHeightField.getText();
         if (StringUtils.isEmpty(value)) {
             value = "0";
@@ -176,7 +145,7 @@ public final class CharacterRangeTab implements BuilderTab {
         return (char) value;
     }
 
-    private List<CharRange> getCharRanges() {
+    public List<CharRange> getCharRanges() {
         final String text = charRanges.getText();
         if (StringUtils.isEmpty(text)) {
             return Collections.emptyList();

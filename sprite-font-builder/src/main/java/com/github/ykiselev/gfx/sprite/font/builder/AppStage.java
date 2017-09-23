@@ -2,10 +2,6 @@ package com.github.ykiselev.gfx.sprite.font.builder;
 
 import com.github.ykiselev.gfx.sprite.font.SpriteFontAndImage;
 import com.github.ykiselev.gfx.sprite.font.SpriteFontBuilder;
-import com.github.ykiselev.gfx.sprite.font.events.BuildSprite;
-import com.github.ykiselev.gfx.sprite.font.events.LoadConfig;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
@@ -57,19 +53,15 @@ public final class AppStage {
 
     private Config config;
 
-    private final EventBus eventBus = new EventBus();
-
     public AppStage(Stage stage, double leftPaneWidth) throws Exception {
         this.appStage = stage;
-
-        eventBus.register(this);
 
         final BorderPane borderPane = new BorderPane();
         borderPane.setTop(createMenu());
 
-        bitmapTab = new BitmapTab(eventBus);
-        fontSettingTab = new FontSettingTab(leftPaneWidth, eventBus);
-        characterRangeTab = new CharacterRangeTab(eventBus);
+        bitmapTab = new BitmapTab(stage);
+        fontSettingTab = new FontSettingTab(leftPaneWidth);
+        characterRangeTab = new CharacterRangeTab();
         tabPane.getTabs().addAll(
                 fontSettingTab.tab(),
                 characterRangeTab.tab(),
@@ -102,11 +94,10 @@ public final class AppStage {
                 file.delete();
             }
         }
-        eventBus.post(
-                new LoadConfig(
-                        config.getConfig("sprite-font-builder.state")
-                )
-        );
+        final Config cfg = this.config.getConfig("sprite-font-builder.state");
+        fontSettingTab.load(cfg);
+        characterRangeTab.load(cfg);
+        bitmapTab.load(cfg);
     }
 
     private void saveConfig() {
@@ -138,45 +129,27 @@ public final class AppStage {
         return Paths.get(System.getProperty("user.home"), FONT_BUILDER_APP_CONF).toFile();
     }
 
-    @Subscribe
-    private void buildSprite(BuildSprite event) {
-        try {
-            final SpriteFontBuilder builder = SpriteFontBuilder.create(
-                    fontSettingTab.getSelectedFont(),
-                    event.ranges(),
-                    event.defaultCharacter(),
-                    event.glyphXBorder(),
-                    event.glyphYBorder()
-            );
-            spriteFontAndImage = builder.build();
-            bitmapTab.show(spriteFontAndImage.getImage());
-            tabPane.getSelectionModel().select(bitmapTab.tab());
-            saveConfig();
-        } catch (Exception ex) {
-            showWarning(ex.getMessage());
-        }
-    }
-
     private MenuBar createMenu() {
         final MenuBar menuBar = new MenuBar();
+        menuBar.getMenus().addAll(
+                createFileMenu(),
+                createBitmapMenu()
+        );
+        return menuBar;
+    }
 
+    private Menu createFileMenu() {
         final Menu menuFile = new Menu("File");
-
         final MenuItem fileSaveAs = new MenuItem("Save As...");
         fileSaveAs.setOnAction(this::onSaveAs);
-
         final MenuItem fileSaveGlyphAs = new MenuItem("Save Glyph As...");
         fileSaveGlyphAs.setOnAction(this::onSaveGlyphAs);
-
         final MenuItem fileSaveConfig = new MenuItem("Save Config");
         fileSaveConfig.setOnAction(this::onSaveConfig);
-
         final MenuItem fileResetConfig = new MenuItem("Reset Config");
         fileResetConfig.setOnAction(this::onResetConfig);
-
         final MenuItem fileExit = new MenuItem("Exit");
         fileExit.setOnAction((e) -> Platform.exit());
-
         menuFile.getItems().addAll(
                 fileSaveAs,
                 //fileSaveGlyphAs,
@@ -187,10 +160,33 @@ public final class AppStage {
                 new SeparatorMenuItem(),
                 fileExit
         );
+        return menuFile;
+    }
 
-        menuBar.getMenus().addAll(menuFile);
+    private Menu createBitmapMenu() {
+        final Menu menuBitmap = new Menu("Bitmap");
+        final MenuItem bitmapRebuild = new MenuItem("Rebuild");
+        bitmapRebuild.setOnAction(this::onRebuildBitmap);
+        menuBitmap.getItems().add(bitmapRebuild);
+        return menuBitmap;
+    }
 
-        return menuBar;
+    private void onRebuildBitmap(ActionEvent actionEvent) {
+        try {
+            final SpriteFontBuilder builder = SpriteFontBuilder.create(
+                    fontSettingTab.getSelectedFont(),
+                    characterRangeTab.getCharRanges(),
+                    characterRangeTab.getDefaultCharacter(),
+                    characterRangeTab.getGlyphBorderWidth(),
+                    characterRangeTab.getGlyphBorderHeight()
+            );
+            spriteFontAndImage = builder.build();
+            bitmapTab.show(spriteFontAndImage.getImage());
+            tabPane.getSelectionModel().select(bitmapTab.tab());
+            saveConfig();
+        } catch (Exception ex) {
+            showError("Config resetting failed!", ex);
+        }
     }
 
     private void onResetConfig(ActionEvent actionEvent) {
@@ -238,7 +234,7 @@ public final class AppStage {
         try {
             if (spriteFontAndImage != null) {
                 final FileChooser dlg = new FileChooser();
-                dlg.setTitle("Save Image");
+                dlg.setTitle("Save Sprite Font");
                 dlg.setInitialFileName(spriteFontAndImage.getName() + ".jar");
                 dlg.getExtensionFilters().clear();
                 dlg.getExtensionFilters().add(JAR_EXT_FILTER);

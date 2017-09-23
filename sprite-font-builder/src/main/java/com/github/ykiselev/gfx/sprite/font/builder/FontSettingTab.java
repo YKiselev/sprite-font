@@ -1,8 +1,5 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
-import com.github.ykiselev.gfx.sprite.font.events.LoadConfig;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueFactory;
 import javafx.collections.FXCollections;
@@ -31,8 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
  */
@@ -41,8 +36,6 @@ public final class FontSettingTab implements BuilderTab {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final double COMBO_BOX_WIDTH = 200.0;
-
-    private final EventBus eventBus;
 
     private final Tab tab = new Tab();
 
@@ -62,9 +55,7 @@ public final class FontSettingTab implements BuilderTab {
         return tab;
     }
 
-    public FontSettingTab(double leftPaneWidth, EventBus eventBus) {
-        this.eventBus = requireNonNull(eventBus);
-
+    public FontSettingTab(double leftPaneWidth) {
         tab.setText("Font Settings");
         tab.setClosable(false);
 
@@ -133,20 +124,24 @@ public final class FontSettingTab implements BuilderTab {
         example.setText("Example text");
         example.setFocusTraversable(false);
 
-        rightBox.getChildren().addAll(fontWeightLabel, fontWeightComboBox,
-                fontPostureLabel, fontPostureComboBox,
-                fontSizeLabel, fontSizeComboBox,
-                exampleText, example);
-
+        rightBox.getChildren().addAll(
+                fontWeightLabel,
+                fontWeightComboBox,
+                fontPostureLabel,
+                fontPostureComboBox,
+                fontSizeLabel,
+                fontSizeComboBox,
+                exampleText,
+                example
+        );
         fontListView.getSelectionModel().selectFirst();
-        eventBus.register(this);
     }
 
-    @Subscribe
-    void load(LoadConfig event) {
+    @Override
+    public void load(Config state) {
         final Config cfg;
         try {
-            cfg = event.config().getConfig("font");
+            cfg = state.getConfig("font");
         } catch (Exception ex) {
             logger.error("Failed to load font section!", ex);
             return;
@@ -164,12 +159,16 @@ public final class FontSettingTab implements BuilderTab {
             logger.error("Failed to load font name!", ex);
         }
         try {
-            fontWeightComboBox.getSelectionModel().select(FontWeight.valueOf(cfg.getString("weight")));
+            fontWeightComboBox.getSelectionModel().select(
+                    FontWeight.valueOf(cfg.getString("weight"))
+            );
         } catch (Exception ex) {
             logger.error("Failed to load font weight!", ex);
         }
         try {
-            fontPostureComboBox.getSelectionModel().select(FontPosture.valueOf(cfg.getString("posture")));
+            fontPostureComboBox.getSelectionModel().select(
+                    FontPosture.valueOf(cfg.getString("posture"))
+            );
         } catch (Exception ex) {
             logger.error("Failed to load font posture!", ex);
         }

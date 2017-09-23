@@ -10,6 +10,8 @@ public interface BuilderTab {
 
     Tab tab();
 
+    void load(Config config);
+
     Config save(Config config);
 
 }
