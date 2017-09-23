@@ -1,4 +1,4 @@
-package org.uze.gfx.sprite.font.builder;
+package com.github.ykiselev.gfx.sprite.font.builder;
 
 import com.google.common.base.Joiner;
 import com.typesafe.config.Config;
@@ -25,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.uze.gfx.sprite.font.SpriteFontHolder;
+import com.github.ykiselev.gfx.sprite.font.SpriteFontHolder;
 
 import java.io.File;
 import java.io.FileOutputStream;

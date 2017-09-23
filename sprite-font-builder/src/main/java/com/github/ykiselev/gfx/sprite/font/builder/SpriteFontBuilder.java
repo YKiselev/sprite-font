@@ -1,5 +1,6 @@
-package org.uze.gfx.sprite.font.builder;
+package com.github.ykiselev.gfx.sprite.font.builder;
 
+import com.github.ykiselev.gfx.sprite.font.SpriteFontHolder;
 import com.google.common.base.Preconditions;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
@@ -16,9 +17,8 @@ import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBoundsType;
-import org.uze.gfx.font.Glyph;
-import org.uze.gfx.font.GlyphBuilder;
-import org.uze.gfx.sprite.font.SpriteFontHolder;
+import com.github.ykiselev.gfx.font.Glyph;
+import com.github.ykiselev.gfx.font.GlyphBuilder;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -97,7 +97,7 @@ public class SpriteFontBuilder {
 
         final WritableImage image = canvas.snapshot(snapshotParameters, null);
 
-        final org.uze.gfx.font.SpriteFontBuilder fontBuilder = new org.uze.gfx.font.SpriteFontBuilder();
+        final com.github.ykiselev.gfx.font.SpriteFontBuilder fontBuilder = new com.github.ykiselev.gfx.font.SpriteFontBuilder();
 
         fontBuilder.withGlyphs(glyphs)
                 .withFontHeight(fontHeight);

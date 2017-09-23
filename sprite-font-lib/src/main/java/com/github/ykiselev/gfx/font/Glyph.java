@@ -1,4 +1,4 @@
-package org.uze.gfx.font;
+package com.github.ykiselev.gfx.font;
 
 import java.util.Objects;
 

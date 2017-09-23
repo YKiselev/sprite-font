@@ -1,12 +1,13 @@
-package org.uze.gfx.sprite.font;
+package com.github.ykiselev.gfx.sprite.font;
 
+import com.github.ykiselev.gfx.font.Glyph;
+import com.github.ykiselev.gfx.font.SpriteFont;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
-import org.uze.gfx.font.Glyph;
-import org.uze.gfx.font.SpriteFont;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -52,12 +53,19 @@ public final class SpriteFontHolder {
 
         final String basePath = "fonts/sprite/";
 
-        try (JarOutputStream os = new JarOutputStream(outputStream, manifest); ObjectOutputStream oos = new ObjectOutputStream(os)) {
+        try (JarOutputStream os = new JarOutputStream(outputStream, manifest)) {
             os.putNextEntry(
                     new JarEntry(basePath + name + ".bin")
             );
-            oos.writeObject(info);
+            os.write(toBytes(info));
             os.closeEntry();
+        }
+    }
+
+    private byte[] toBytes(SpriteFont font) throws IOException {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(os)) {
+            oos.writeObject(font);
+            return os.toByteArray();
         }
     }
 
