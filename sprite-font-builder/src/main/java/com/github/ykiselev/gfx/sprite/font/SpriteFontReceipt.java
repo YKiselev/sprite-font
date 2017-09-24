@@ -21,6 +21,7 @@ import javafx.scene.text.Font;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -64,4 +65,31 @@ public final class SpriteFontReceipt {
         return new FontRasterizer(font, chars, defaultCharacterIndex, glyphXBorder, glyphYBorder).build();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SpriteFontReceipt that = (SpriteFontReceipt) o;
+        return defaultCharacter == that.defaultCharacter &&
+                glyphXBorder == that.glyphXBorder &&
+                glyphYBorder == that.glyphYBorder &&
+                Objects.equals(font, that.font) &&
+                Objects.equals(ranges, that.ranges);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(font, ranges, defaultCharacter, glyphXBorder, glyphYBorder);
+    }
+
+    @Override
+    public String toString() {
+        return "SpriteFontReceipt{" +
+                "font=" + font +
+                ", ranges=" + ranges +
+                ", defaultCharacter=" + defaultCharacter +
+                ", glyphXBorder=" + glyphXBorder +
+                ", glyphYBorder=" + glyphYBorder +
+                '}';
+    }
 }

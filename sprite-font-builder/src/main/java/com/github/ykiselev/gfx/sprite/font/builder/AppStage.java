@@ -129,10 +129,14 @@ public final class AppStage {
             if (Objects.equals(receipt, newReceipt)) {
                 return;
             }
+            logger.info("Rebuilding bitmap...");
             receipt = newReceipt;
             spriteFontAndImage = newReceipt.build();
+            logger.info("Showing bitmap...");
             bitmapTab.show(spriteFontAndImage.getImage());
+            logger.info("Saving config...");
             saveConfig();
+            logger.info("Operation complete.");
         } catch (Exception ex) {
             showError("Operation failed!", ex);
         }

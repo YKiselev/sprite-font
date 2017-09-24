@@ -18,6 +18,7 @@ package com.github.ykiselev.gfx.sprite.font;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -48,5 +49,27 @@ public final class CharRange implements Supplier<List<Character>> {
             result.add(i);
         }
         return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CharRange charRange = (CharRange) o;
+        return start == charRange.start &&
+                end == charRange.end;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end);
+    }
+
+    @Override
+    public String toString() {
+        return "CharRange{" +
+                "start=" + start +
+                ", end=" + end +
+                '}';
     }
 }

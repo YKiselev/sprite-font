@@ -17,12 +17,22 @@
 package com.github.ykiselev.gfx.sprite.font.builder;
 
 import com.typesafe.config.Config;
+import javafx.geometry.Insets;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
@@ -45,7 +55,18 @@ public final class BitmapTab implements BuilderTab {
         imageView.setPreserveRatio(true);
         imageView.setBlendMode(BlendMode.EXCLUSION);
         imageView.setCache(true);
-        final ScrollPane scrollPane = new ScrollPane(imageView);
+        final Pane imagePane = new Pane(imageView);
+        imagePane.setBorder(
+                new Border(
+                        new BorderStroke(
+                                Color.DARKGRAY,
+                                BorderStrokeStyle.SOLID,
+                                CornerRadii.EMPTY,
+                                new BorderWidths(2)
+                        )
+                )
+        );
+        final ScrollPane scrollPane = new ScrollPane(imagePane);
         tab.setContent(scrollPane);
         tab.setTooltip(new Tooltip("Bitmap size: " + image.getWidth() + ":" + image.getHeight()));
     }
