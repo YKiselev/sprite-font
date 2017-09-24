@@ -33,7 +33,9 @@ And finally Bitmap tab showing the font sprite rendered using specified settings
 
 ![Bitmap tab](https://img-fotki.yandex.ru/get/480022/6633071.1d/0_a5711_8a593a4b_orig)
 
-Note: there is no special button like "rebuild bitmap" because it rebuilds automatically when user selects Bitmap tab (if there were no bitmap rasterized before or some settings has changed) of selects Save As command from File menu (same rules as for Bitmap tab applied).
+Note: there is no special button like "rebuild bitmap" because program rebuilds it automatically when user selects Bitmap tab (if there were no bitmap rasterized before or some settings has changed) of selects Save As command from File menu (same rules as for Bitmap tab applied). 
+
+Produced bitmap dimensions are always power of two (for example - 256x128) and it's width to height ratio limit is one (ratio → 1).
 
 Next step is to export sprite font to file on disk. Use File-Save As command to save result as
 1. Sprite font file (*.sf) - this will save complete sprite font objects including bitmap and additional information, needed to render glyphs in user program. It's Java Serialized form of class `com.github.ykiselev.gfx.font.SpriteFont` (more on the class below)
@@ -52,6 +54,13 @@ Add maven dependency to your project
 Put sprite font file in your program module's resource folder (for example resources/fonts/sample.sf). 
 
 Deserialize binary data into instance of class `com.github.ykiselev.gfx.font.SpriteFont`:
+```java
+final SpriteFont result;
+try (InputStream is = new FileInputStream("fonts/sample.sf"); ObjectInputStream ois = new ObjectInputStream(is)) {
+    result = (SpriteFont) ois.readObject();
+}
+```
+And use instance of `SpriteFont` class to extract bitmap and glyphs: 
 ```java
 public final class SpriteFont implements Serializable {
 
@@ -76,9 +85,7 @@ public final class SpriteFont implements Serializable {
     // constructor and methods skipped
 }
 ```
-Then you can extract bitmap and create for example OpenGL texture from it. Glyphs array can be turned into Map<Character,Glyph> and then you can draw line of text using texture and this map.
-
-Work in progress.
+Then you can create for example OpenGL texture from bitmap. Glyphs array can be turned into Map<Character,GlGlyph> where GlGlyph is a user class containig texture coordinates for each glyph.
 
 # License
 This project is licensed under the Apache License, Version 2.0.
