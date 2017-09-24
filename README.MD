@@ -81,4 +81,4 @@ Then you can extract bitmap and create for example OpenGL texture from it. Glyph
 Work in progress.
 
 # License
-This library is licensed under the Apache License, Version 2.0.
+This project is licensed under the Apache License, Version 2.0.
