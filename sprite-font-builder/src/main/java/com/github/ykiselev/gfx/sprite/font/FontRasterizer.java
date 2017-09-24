@@ -69,10 +69,10 @@ public final class FontRasterizer {
 
     public FontRasterizer(Font font, char[] characters, int defaultCharacterIndex, int glyphXBorder, int glyphYBorder) {
         if (glyphXBorder < 0 || glyphXBorder > MAX_GLYPH_BORDER) {
-            throw new IllegalArgumentException("glyphXBorder");
+            throw new IllegalArgumentException("Border width should be in range 0-" + MAX_GLYPH_BORDER);
         }
         if (glyphYBorder < 0 || glyphYBorder > MAX_GLYPH_BORDER) {
-            throw new IllegalArgumentException("glyphYBorder");
+            throw new IllegalArgumentException("Border height should be in range 0-" + MAX_GLYPH_BORDER);
         }
         this.font = font;
         this.characters = characters.clone();

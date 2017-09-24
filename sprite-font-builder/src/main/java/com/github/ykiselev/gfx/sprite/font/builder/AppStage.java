@@ -24,6 +24,7 @@ import com.typesafe.config.ConfigRenderOptions;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -33,7 +34,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.controlsfx.dialog.Dialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -267,17 +267,18 @@ public final class AppStage {
     }
 
     public static void showWarning(String message) {
-        Dialogs.create()
-                .title(APP_TITLE)
-                .message(message)
-                .showWarning();
+        final Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(APP_TITLE);
+        alert.setHeaderText(message);
+        alert.showAndWait();
     }
 
     public static void showError(String message, Throwable t) {
-        Dialogs.create()
-                .title(APP_TITLE)
-                .message(message)
-                .showException(t);
+        final Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(APP_TITLE);
+        alert.setHeaderText(message);
+        alert.setContentText(t.getMessage());
+        alert.showAndWait();
     }
 
 }
