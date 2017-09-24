@@ -61,8 +61,13 @@ public final class SpriteFontReceipt {
             i++;
         }
         Arrays.sort(chars);
-        final int defaultCharacterIndex = Arrays.binarySearch(chars, defaultCharacter);
-        return new FontRasterizer(font, chars, defaultCharacterIndex, glyphXBorder, glyphYBorder).build();
+        return new FontRasterizer(
+                font,
+                chars,
+                Arrays.binarySearch(chars, defaultCharacter),
+                glyphXBorder,
+                glyphYBorder
+        ).build();
     }
 
     @Override

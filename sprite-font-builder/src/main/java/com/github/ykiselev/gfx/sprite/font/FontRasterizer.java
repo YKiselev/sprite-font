@@ -21,8 +21,6 @@ import com.github.ykiselev.gfx.font.SpriteFont;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
-import javafx.scene.Group;
-import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -40,11 +38,6 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Created by Uze on 07.01.2015.
@@ -79,23 +72,6 @@ public final class FontRasterizer {
         this.defaultCharacterIndex = defaultCharacterIndex;
         this.glyphXBorder = glyphXBorder;
         this.glyphYBorder = glyphYBorder;
-    }
-
-    public static SpriteFontAndImage create(Font font, List<CharRange> ranges, char defaultCharacter, int glyphXBorder, int glyphYBorder) {
-        final Set<Character> uniqueCharacters = ranges.stream()
-                .map(CharRange::get)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-        uniqueCharacters.add(defaultCharacter);
-        final char[] chars = new char[uniqueCharacters.size()];
-        int i = 0;
-        for (Character ch : uniqueCharacters) {
-            chars[i] = ch;
-            i++;
-        }
-        Arrays.sort(chars);
-        final int defaultCharacterIndex = Arrays.binarySearch(chars, defaultCharacter);
-        return new FontRasterizer(font, chars, defaultCharacterIndex, glyphXBorder, glyphYBorder).build();
     }
 
     public SpriteFontAndImage build() {
@@ -145,78 +121,63 @@ public final class FontRasterizer {
         ctx.setFont(font);
         ctx.setFill(Color.color(1, 1, 1, 1));
         ctx.setTextBaseline(VPos.BOTTOM);
+        ctx.setTextAlign(TextAlignment.LEFT);
+        ctx.setFontSmoothingType(FontSmoothingType.GRAY);
 
         final int lineHeight = fontHeight + glyphYBorder;
         int x = glyphXBorder;
         int y = lineHeight;
         final Glyph[] glyphs = new Glyph[characters.length];
-        final GlyphBuilder builder = new GlyphBuilder();
 
         for (int i = 0; i < characters.length; i++) {
             final int w = widths[i] + glyphXBorder;
             final char character = characters[i];
-
             if (x + w > width) {
                 x = glyphXBorder;
                 y += lineHeight;
             }
-
             ctx.fillText(String.valueOf(character), x, y);
-
-            builder.clear()
-                    .withCharacter(character)
-                    .withX(x)
-                    .withY(y - fontHeight);
-
-            if (characterWidth != widths[i]) {
-                builder.withWidth(widths[i]);
-            }
-
-            glyphs[i] = builder.createGlyph();
-
+            glyphs[i] = new Glyph(
+                    character,
+                    x,
+                    y - fontHeight,
+                    characterWidth != widths[i] ? widths[i] : 0
+            );
             x += w;
         }
-
         return glyphs;
     }
 
     private int[] measureCharacters() {
         final Text text = new Text();
-
         text.setFont(font);
-        text.setBoundsType(TextBoundsType.LOGICAL);
+        text.setBoundsType(TextBoundsType.VISUAL);
         text.setTextAlignment(TextAlignment.LEFT);
-        text.setFontSmoothingType(FontSmoothingType.LCD);
-
-        final Scene scene = new Scene(new Group(text));
-
-        text.setText("WWW");
-
-        Bounds bounds = text.getLayoutBounds();
-        fontHeight = (int) Math.ceil(bounds.getHeight());
-        final int w1 = (int) Math.ceil(bounds.getWidth());
-
-        text.setText("iii");
-
-        final int w2 = (int) Math.ceil(text.getLayoutBounds().getWidth());
-
-        final boolean isFixedPitch = (w1 == w2);
-
-        if (isFixedPitch) {
-            text.setText("x");
-            characterWidth = (int) Math.ceil(text.getLayoutBounds().getWidth());
-        } else {
-            characterWidth = 0;
-        }
-
+        text.setTextOrigin(VPos.BOTTOM);
+        text.setFontSmoothingType(FontSmoothingType.GRAY);
+        text.setSmooth(true);
         final int[] widths = new int[characters.length];
-
+        int min = Integer.MAX_VALUE, max = 0;
         for (int i = 0; i < characters.length; i++) {
-            text.setText(String.valueOf(characters[i]));
-            bounds = text.getLayoutBounds();
-            widths[i] = (int) Math.ceil(bounds.getWidth());
+            final char ch = characters[i];
+            text.setText(String.valueOf(ch));
+            final Bounds bounds = text.getLayoutBounds();
+            final int width = (int) Math.ceil(bounds.getWidth());
+            final int height = (int) Math.ceil(bounds.getHeight());
+            widths[i] = width;
+            if (height > fontHeight) {
+                fontHeight = height;
+            }
+            if (width < min) {
+                min = width;
+            }
+            if (width > max) {
+                max = width;
+            }
         }
-
+        if (min == max) {
+            characterWidth = min;
+        }
         return widths;
     }
 
