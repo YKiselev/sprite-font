@@ -14,7 +14,7 @@ You should see window like this
 
 Here you see Font Settings tab where user can select font name from a list of available fonts, font weight, posture and size. Also there is a text box to enter sample text which will be rendered above (using selected attributes). If no text selected then font name is used as sample text.
 
-Next tab looks like this and gives user ability to select character ranges for resulting sprite font.
+Next tab gives a user ability to select character ranges for resulting sprite font.
 
 ![Character Ranges tab](https://img-fotki.yandex.ru/get/484172/6633071.1d/0_a5713_58fbfcdd_orig)
 
@@ -49,4 +49,5 @@ Add maven dependency to your project
 </dependency>
 ```
 Put sprite font file in your program module's resource folder (for example resources/fonts/sample.sf).
-WIP
+
+Work in progress.
