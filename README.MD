@@ -1,4 +1,5 @@
 # Sprite Font Builder
+## Synopsis
 
 This is a Java FX based utility which allows you to convert any installed Font into Sprite Font, where Sprite Font is a structure consisting of png image containing glyphs (rasterized symbols) and technical information about glyphs bounding rectangles, font height, etc.
 
@@ -48,6 +49,36 @@ Add maven dependency to your project
     <version>${sprite-font-lib.version}</version>
 </dependency>
 ```
-Put sprite font file in your program module's resource folder (for example resources/fonts/sample.sf).
+Put sprite font file in your program module's resource folder (for example resources/fonts/sample.sf). 
+
+Deserialize binary data into instance of class `com.github.ykiselev.gfx.font.SpriteFont`:
+```java
+public final class SpriteFont implements Serializable {
+
+    private final int fontHeight;
+
+    private final int defaultCharacterIndex;
+
+    // If greater than 0, font is fixed pitch font
+    private final int characterWidth;
+
+    private final Glyph[] glyphs;
+
+    // sprite, png image
+    private final byte[] bitmap;
+
+    // Left and right glyph border size
+    private final int glyphXBorder;
+
+    // Top and bottom border size
+    private final int glyphYBorder;
+    
+    // constructor and methods skipped
+}
+```
+Then you can extract bitmap and create for example OpenGL texture from it. Glyphs array can be turned into Map<Character,Glyph> and then you can draw line of text using texture and this map.
 
 Work in progress.
+
+# License
+This library is licensed under the Apache License, Version 2.0.
