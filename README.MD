@@ -32,7 +32,7 @@ And finally Bitmap tab showing the font sprite rendered using specified settings
 
 ![Bitmap tab](https://img-fotki.yandex.ru/get/480022/6633071.1d/0_a5711_8a593a4b_orig)
 
-Note: there is no special button like "rebuild bitmap" because it is rebuilded automatically when you user selects Bitmap tab (if there were no bitmap rasterized before or some settings has changed) of selects Save As command from File menu (same rules as for Bitmap tab applied).
+Note: there is no special button like "rebuild bitmap" because it rebuilds automatically when user selects Bitmap tab (if there were no bitmap rasterized before or some settings has changed) of selects Save As command from File menu (same rules as for Bitmap tab applied).
 
 Next step is to export sprite font to file on disk. Use File-Save As command to save result as
 1. Sprite font file (*.sf) - this will save complete sprite font objects including bitmap and additional information, needed to render glyphs in user program. It's Java Serialized form of class `com.github.ykiselev.gfx.font.SpriteFont` (more on the class below)
