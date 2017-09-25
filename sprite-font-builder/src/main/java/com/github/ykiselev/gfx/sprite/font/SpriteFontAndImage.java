@@ -17,16 +17,13 @@
 package com.github.ykiselev.gfx.sprite.font;
 
 import com.github.ykiselev.gfx.font.Glyph;
+import com.github.ykiselev.gfx.font.GlyphRange;
 import com.github.ykiselev.gfx.font.SpriteFont;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
 
-import javax.imageio.ImageIO;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -76,19 +73,20 @@ public final class SpriteFontAndImage {
         if (info.characterWidth() > 0) {
             builder.add("characterWidth", info.characterWidth());
         }
-        if (info.lineInterval() > 0) {
-            builder.add("lineInterval", info.lineInterval());
-        }
         final JsonArrayBuilder ab = Json.createArrayBuilder();
-        for (Glyph glyph : info.glyphs()) {
-            final JsonObjectBuilder b = Json.createObjectBuilder();
-            b.add("character", glyph.character())
-                    .add("x", glyph.x())
-                    .add("y", glyph.y());
-            if (glyph.width() > 0) {
-                b.add("width", glyph.width());
+        for (GlyphRange range : info.glyphs()) {
+            final JsonArrayBuilder rab = Json.createArrayBuilder();
+            for (Glyph glyph : range.glyphs()) {
+                final JsonObjectBuilder b = Json.createObjectBuilder();
+                b.add("character", glyph.character())
+                        .add("x", glyph.x())
+                        .add("y", glyph.y());
+                if (glyph.width() > 0) {
+                    b.add("width", glyph.width());
+                }
+                rab.add(b);
             }
-            ab.add(b);
+            ab.add(rab);
         }
         builder.add("glyphs", ab.build());
         os.write(
@@ -98,19 +96,19 @@ public final class SpriteFontAndImage {
         );
     }
 
-    public void saveGlyphImage(char value, File destFile) throws IOException {
-        for (Glyph glyph : info.glyphs()) {
-            if (glyph.character() == value) {
-                final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
-                final BufferedImage glyphImage = bufferedImage.getSubimage(
-                        glyph.x(),
-                        glyph.y(),
-                        glyph.width() != 0 ? glyph.width() : info.characterWidth(),
-                        info.fontHeight()
-                );
-                ImageIO.write(glyphImage, "png", destFile);
-                break;
-            }
-        }
-    }
+//    public void saveGlyphImage(char value, File destFile) throws IOException {
+//        for (Glyph glyph : info.glyphs()) {
+//            if (glyph.character() == value) {
+//                final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+//                final BufferedImage glyphImage = bufferedImage.getSubimage(
+//                        glyph.x(),
+//                        glyph.y(),
+//                        glyph.width() != 0 ? glyph.width() : info.characterWidth(),
+//                        info.fontHeight()
+//                );
+//                ImageIO.write(glyphImage, "png", destFile);
+//                break;
+//            }
+//        }
+//    }
 }

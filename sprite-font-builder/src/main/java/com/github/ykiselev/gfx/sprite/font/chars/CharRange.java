@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-package com.github.ykiselev.gfx.sprite.font;
+package com.github.ykiselev.gfx.sprite.font.chars;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
  * Created by Uze on 07.01.2015.
  */
-public final class CharRange implements Supplier<List<Character>> {
+public final class CharRange implements Supplier<char[]>, Comparable<CharRange> {
+
+    private static final Comparator<CharRange> COMPARATOR = Comparator.comparing(CharRange::start)
+            .thenComparing(CharRange::end);
 
     private final char start;
 
     private final char end;
+
+    public char start() {
+        return start;
+    }
+
+    public char end() {
+        return end;
+    }
 
     public int getLength() {
         return end - start + 1;
@@ -43,12 +53,17 @@ public final class CharRange implements Supplier<List<Character>> {
     }
 
     @Override
-    public List<Character> get() {
-        final List<Character> result = new ArrayList<>(getLength());
+    public char[] get() {
+        final char[] result = new char[getLength()];
         for (char i = start; i <= end; i++) {
-            result.add(i);
+            result[i - start] = i;
         }
         return result;
+    }
+
+    @Override
+    public int compareTo(CharRange o) {
+        return COMPARATOR.compare(this, o);
     }
 
     @Override
@@ -71,5 +86,32 @@ public final class CharRange implements Supplier<List<Character>> {
                 "start=" + start +
                 ", end=" + end +
                 '}';
+    }
+
+    /**
+     * Tries to merge two ranges.
+     *
+     * @param r the other range
+     * @return the new merged range or {@code null}
+     */
+    public CharRange join(CharRange r) {
+        // before this
+        if (r.end < start) {
+            return null;
+        }
+        // after this
+        if (r.start > end) {
+            return null;
+        }
+        // this range starts before or with other
+        if (start <= r.start) {
+            // this range completely covers other
+            if (end >= r.end) {
+                return this;
+            } else {
+                return new CharRange(start, r.end);
+            }
+        }
+        return r.join(this);
     }
 }

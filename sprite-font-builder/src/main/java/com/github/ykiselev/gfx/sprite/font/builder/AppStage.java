@@ -53,7 +53,7 @@ public final class AppStage {
 
     private static final String FONT_BUILDER_APP_CONF = "font-builder-app.conf";
 
-    private final Logger logger = LoggerFactory.getLogger(AppStage.class);
+    private static final Logger logger = LoggerFactory.getLogger(AppStage.class);
 
     private final Stage appStage;
 
@@ -274,10 +274,11 @@ public final class AppStage {
     }
 
     public static void showError(String message, Throwable t) {
+        logger.error("Operation failed!", t);
         final Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(APP_TITLE);
         alert.setHeaderText(message);
-        alert.setContentText(t.getMessage());
+        alert.setContentText(t.toString());
         alert.showAndWait();
     }
 

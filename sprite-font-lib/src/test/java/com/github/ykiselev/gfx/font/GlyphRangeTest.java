@@ -29,36 +29,27 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
  */
-public class SpriteFontTest {
+public class GlyphRangeTest {
 
     @Test
     public void shouldSerialize() throws Exception {
-        final SpriteFont spriteFont = new SpriteFont(
-                14,
-                100,
-                10,
-                new GlyphRange[]{
-                        new GlyphRange(
-                                'a',
-                                new Glyph[]{
-                                        new Glyph((char) 1, 2, 3, 4),
-                                        new Glyph((char) 2, 8, 3, 8)
-                                }
-                        )
-                },
-                new byte[]{1, 2, 3},
-                3,
-                4
+        final GlyphRange range = new GlyphRange(
+                'c',
+                new Glyph[]{
+                        new Glyph((char) 1, 2, 3, 4),
+                        new Glyph((char) 2, 8, 3, 8)
+                }
         );
         final byte[] bytes;
         try (ByteArrayOutputStream os = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(os)) {
-            oos.writeObject(spriteFont);
+            oos.writeObject(range);
             bytes = os.toByteArray();
         }
-        final SpriteFont result;
+        final GlyphRange result;
         try (InputStream is = new ByteArrayInputStream(bytes); ObjectInputStream ois = new ObjectInputStream(is)) {
-            result = (SpriteFont) ois.readObject();
+            result = (GlyphRange) ois.readObject();
         }
-        assertEquals(spriteFont, result);
+        assertEquals(range, result);
     }
+
 }

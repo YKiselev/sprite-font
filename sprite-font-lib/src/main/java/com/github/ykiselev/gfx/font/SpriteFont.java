@@ -16,7 +16,6 @@
 
 package com.github.ykiselev.gfx.font;
 
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
@@ -26,6 +25,8 @@ import java.util.Objects;
  */
 public final class SpriteFont implements Serializable {
 
+    private static final long serialVersionUID = -6255551253816672629L;
+
     private final int fontHeight;
 
     private final int defaultCharacterIndex;
@@ -33,12 +34,9 @@ public final class SpriteFont implements Serializable {
     // If greater than 0, font is fixed pitch font
     private final int characterWidth;
 
-    private final Glyph[] glyphs;
+    private final GlyphRange[] glyphs;
 
     private final byte[] bitmap;
-
-    // Interval in pixels between text lines, i.e. line height = fontHeight + lineInterval
-    private final int lineInterval;
 
     // Left and right glyph border size
     private final int glyphXBorder;
@@ -58,16 +56,12 @@ public final class SpriteFont implements Serializable {
         return characterWidth;
     }
 
-    public Glyph[] glyphs() {
+    public GlyphRange[] glyphs() {
         return glyphs;
     }
 
     public byte[] bitmap() {
         return bitmap;
-    }
-
-    public int lineInterval() {
-        return lineInterval;
     }
 
     public int glyphXBorder() {
@@ -78,19 +72,14 @@ public final class SpriteFont implements Serializable {
         return glyphYBorder;
     }
 
-    public SpriteFont(int fontHeight, int defaultCharacterIndex, int characterWidth, Glyph[] glyphs, byte[] bitmap, int lineInterval, int glyphXBorder, int glyphYBorder) {
+    public SpriteFont(int fontHeight, int defaultCharacterIndex, int characterWidth, GlyphRange[] glyphs, byte[] bitmap, int glyphXBorder, int glyphYBorder) {
         this.fontHeight = fontHeight;
         this.defaultCharacterIndex = defaultCharacterIndex;
         this.characterWidth = characterWidth;
         this.glyphs = glyphs;
         this.bitmap = bitmap;
-        this.lineInterval = lineInterval;
         this.glyphXBorder = glyphXBorder;
         this.glyphYBorder = glyphYBorder;
-    }
-
-    private Object writeReplace() throws ObjectStreamException {
-        return new SpriteFontReplacement(this);
     }
 
     @Override
@@ -99,7 +88,6 @@ public final class SpriteFont implements Serializable {
                 "fontHeight=" + fontHeight +
                 ", defaultCharacterIndex=" + defaultCharacterIndex +
                 ", characterWidth=" + characterWidth +
-                ", lineInterval=" + lineInterval +
                 ", glyphXBorder=" + glyphXBorder +
                 ", glyphYBorder=" + glyphYBorder +
                 '}';
@@ -113,7 +101,6 @@ public final class SpriteFont implements Serializable {
         return fontHeight == that.fontHeight &&
                 defaultCharacterIndex == that.defaultCharacterIndex &&
                 characterWidth == that.characterWidth &&
-                lineInterval == that.lineInterval &&
                 glyphXBorder == that.glyphXBorder &&
                 glyphYBorder == that.glyphYBorder &&
                 Arrays.equals(glyphs, that.glyphs) &&
@@ -122,78 +109,6 @@ public final class SpriteFont implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fontHeight, defaultCharacterIndex, characterWidth, glyphs, bitmap, lineInterval, glyphXBorder, glyphYBorder);
-    }
-}
-
-final class SpriteFontReplacement implements Serializable {
-
-    private static final long serialVersionUID = -4007521747869723305L;
-
-    private int fontHeight;
-
-    private int defaultCharacterIndex;
-
-    private int characterWidth;
-
-    private int[] glyphs;
-
-    private byte[] bitmap;
-
-    private int lineInterval;
-
-    private int glyphXBorder;
-
-    private int glyphYBorder;
-
-    SpriteFontReplacement(SpriteFont font) {
-        fontHeight = font.fontHeight();
-        defaultCharacterIndex = font.defaultCharacterIndex();
-        characterWidth = font.characterWidth();
-        glyphs = toArray(font.glyphs());
-        bitmap = font.bitmap();
-        lineInterval = font.lineInterval();
-        glyphXBorder = font.glyphXBorder();
-        glyphYBorder = font.glyphYBorder();
-    }
-
-    Object readResolve() throws ObjectStreamException {
-        return new SpriteFont(
-                fontHeight,
-                defaultCharacterIndex,
-                characterWidth,
-                toGlyphs(glyphs),
-                bitmap,
-                lineInterval,
-                glyphXBorder,
-                glyphYBorder
-        );
-    }
-
-    private Glyph[] toGlyphs(int[] data) {
-        final Glyph[] result = new Glyph[data.length >> 2];
-        for (int i = 0; i < result.length; i++) {
-            final int k = i * 4;
-            result[i] = new Glyph(
-                    data[k],
-                    data[k + 1],
-                    data[k + 2],
-                    data[k + 3]
-            );
-        }
-        return result;
-    }
-
-    private int[] toArray(Glyph[] glyphs) {
-        final int[] data = new int[4 * glyphs.length];
-        for (int i = 0; i < glyphs.length; i++) {
-            final Glyph glyph = glyphs[i];
-            final int k = i * 4;
-            data[k] = glyph.character();
-            data[k + 1] = glyph.x();
-            data[k + 2] = glyph.y();
-            data[k + 3] = glyph.width();
-        }
-        return data;
+        return Objects.hash(fontHeight, defaultCharacterIndex, characterWidth, glyphs, bitmap, glyphXBorder, glyphYBorder);
     }
 }

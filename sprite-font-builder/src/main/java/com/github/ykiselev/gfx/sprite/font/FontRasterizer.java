@@ -17,14 +17,14 @@
 package com.github.ykiselev.gfx.sprite.font;
 
 import com.github.ykiselev.gfx.font.Glyph;
+import com.github.ykiselev.gfx.font.GlyphRange;
 import com.github.ykiselev.gfx.font.SpriteFont;
-import javafx.embed.swing.SwingFXUtils;
+import com.github.ykiselev.gfx.sprite.font.image.PngBytes;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -33,11 +33,10 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBoundsType;
 
-import javax.imageio.ImageIO;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by Uze on 07.01.2015.
@@ -48,19 +47,15 @@ public final class FontRasterizer {
 
     private final Font font;
 
-    private final char[] characters;
+    private final Collection<char[]> characters;
 
-    private final int defaultCharacterIndex;
+    private final char defaultCharacter;
 
     private final int glyphXBorder;
 
     private final int glyphYBorder;
 
-    private int characterWidth;
-
-    private int fontHeight;
-
-    public FontRasterizer(Font font, char[] characters, int defaultCharacterIndex, int glyphXBorder, int glyphYBorder) {
+    public FontRasterizer(Font font, List<char[]> characters, char defaultCharacter, int glyphXBorder, int glyphYBorder) {
         if (glyphXBorder < 0 || glyphXBorder > MAX_GLYPH_BORDER) {
             throw new IllegalArgumentException("Border width should be in range 0-" + MAX_GLYPH_BORDER);
         }
@@ -68,54 +63,48 @@ public final class FontRasterizer {
             throw new IllegalArgumentException("Border height should be in range 0-" + MAX_GLYPH_BORDER);
         }
         this.font = font;
-        this.characters = characters.clone();
-        this.defaultCharacterIndex = defaultCharacterIndex;
+        this.characters = characters;
+        this.defaultCharacter = defaultCharacter;
         this.glyphXBorder = glyphXBorder;
         this.glyphYBorder = glyphYBorder;
     }
 
     public SpriteFontAndImage build() {
-        final int[] widths = measureCharacters();
-        final Canvas canvas = createCanvas(widths);
+        final Text text = createText();
+        final List<Range> ranges = characters.stream()
+                .map(Range::new)
+                .map(r -> r.measure(text))
+                .collect(Collectors.toList());
+        final int fontHeight = ranges.stream()
+                .map(Range::metrics)
+                .mapToInt(RangeMetrics::height)
+                .max()
+                .orElse(0);
+        final Canvas canvas = createCanvas(ranges, fontHeight);
+        final int characterWidth = ranges.stream()
+                .map(Range::metrics)
+                .mapToInt(RangeMetrics::characterWidth)
+                .reduce(0, (a, b) -> a == b ? a : 0);
         final SnapshotParameters snapshotParameters = new SnapshotParameters();
         snapshotParameters.setFill(Color.color(0, 0, 0, 0));
         // Note: render glyphs before taking image snapshot
-        final Glyph[] glyphs = renderCharacters(canvas.getGraphicsContext2D(), widths);
+        renderCharacters(canvas.getGraphicsContext2D(), ranges, fontHeight, characterWidth);
         final WritableImage image = canvas.snapshot(snapshotParameters, null);
         final SpriteFont spriteFont = new SpriteFont(
                 fontHeight,
-                defaultCharacterIndex,
+                defaultCharacter,
                 characterWidth,
-                glyphs,
-                toPngBytes(image),
-                0,
+                ranges.stream()
+                        .map(Range::toGlyphRange)
+                        .toArray(GlyphRange[]::new),
+                PngBytes.convert(image),
                 glyphXBorder,
                 glyphYBorder
         );
         return new SpriteFontAndImage(font.getName(), spriteFont, image);
     }
 
-    private byte[] toPngBytes(Image image) {
-        final BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
-        try {
-            final BufferedImage grayImage = new BufferedImage(
-                    bufferedImage.getWidth(null),
-                    bufferedImage.getHeight(null),
-                    BufferedImage.TYPE_BYTE_GRAY
-            );
-            final Graphics2D pic = grayImage.createGraphics();
-            pic.drawImage(bufferedImage, 0, 0, null);
-            pic.dispose();
-            try (ByteArrayOutputStream os = new ByteArrayOutputStream(16 * 1024)) {
-                ImageIO.write(grayImage, "png", os);
-                return os.toByteArray();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Glyph[] renderCharacters(GraphicsContext ctx, int[] widths) {
+    private void renderCharacters(GraphicsContext ctx, Collection<Range> ranges, int fontHeight, int characterWidth) {
         final int width = (int) ctx.getCanvas().getWidth();
 
         ctx.setFont(font);
@@ -127,28 +116,31 @@ public final class FontRasterizer {
         final int lineHeight = fontHeight + glyphYBorder;
         int x = glyphXBorder;
         int y = lineHeight;
-        final Glyph[] glyphs = new Glyph[characters.length];
-
-        for (int i = 0; i < characters.length; i++) {
-            final int w = widths[i] + glyphXBorder;
-            final char character = characters[i];
-            if (x + w > width) {
-                x = glyphXBorder;
-                y += lineHeight;
+        for (Range range : ranges) {
+            final RangeMetrics metrics = range.metrics();
+            for (int i = 0; i < range.length(); i++) {
+                final int w = metrics.width(i) + glyphXBorder;
+                final char character = range.charAt(i);
+                if (x + w > width) {
+                    x = glyphXBorder;
+                    y += lineHeight;
+                }
+                ctx.fillText(String.valueOf(character), x, y);
+                range.glyph(
+                        i,
+                        new Glyph(
+                                character,
+                                x,
+                                y - fontHeight,
+                                characterWidth != metrics.width(i) ? metrics.width(i) : 0
+                        )
+                );
+                x += w;
             }
-            ctx.fillText(String.valueOf(character), x, y);
-            glyphs[i] = new Glyph(
-                    character,
-                    x,
-                    y - fontHeight,
-                    characterWidth != widths[i] ? widths[i] : 0
-            );
-            x += w;
         }
-        return glyphs;
     }
 
-    private int[] measureCharacters() {
+    private Text createText() {
         final Text text = new Text();
         text.setFont(font);
         text.setBoundsType(TextBoundsType.VISUAL);
@@ -156,29 +148,7 @@ public final class FontRasterizer {
         text.setTextOrigin(VPos.BOTTOM);
         text.setFontSmoothingType(FontSmoothingType.GRAY);
         text.setSmooth(true);
-        final int[] widths = new int[characters.length];
-        int min = Integer.MAX_VALUE, max = 0;
-        for (int i = 0; i < characters.length; i++) {
-            final char ch = characters[i];
-            text.setText(String.valueOf(ch));
-            final Bounds bounds = text.getLayoutBounds();
-            final int width = (int) Math.ceil(bounds.getWidth());
-            final int height = (int) Math.ceil(bounds.getHeight());
-            widths[i] = width;
-            if (height > fontHeight) {
-                fontHeight = height;
-            }
-            if (width < min) {
-                min = width;
-            }
-            if (width > max) {
-                max = width;
-            }
-        }
-        if (min == max) {
-            characterWidth = min;
-        }
-        return widths;
+        return text;
     }
 
     private static int nextPowerOfTwo(int value) {
@@ -196,11 +166,15 @@ public final class FontRasterizer {
         );
     }
 
-    private Canvas createCanvas(int[] widths) {
-        int totalWidth = glyphXBorder;
-        for (int w : widths) {
-            totalWidth += w + glyphXBorder;
-        }
+    private Canvas createCanvas(Collection<Range> ranges, int fontHeight) {
+        final int[] widths = ranges.stream()
+                .map(Range::metrics)
+                .map(RangeMetrics::widths)
+                .flatMapToInt(Arrays::stream)
+                .toArray();
+        final int totalWidth = glyphXBorder + Arrays.stream(widths)
+                .map(v -> v + glyphXBorder)
+                .sum();
         int rowWidth = nextPowerOfTwo((int) Math.sqrt(totalWidth));
         int rows;
         while (true) {
@@ -216,7 +190,10 @@ public final class FontRasterizer {
                 }
             }
         }
-        return new Canvas(rowWidth, nextPowerOfTwo(glyphYBorder + rows * (fontHeight + glyphYBorder)));
+        return new Canvas(
+                rowWidth,
+                nextPowerOfTwo(glyphYBorder + rows * (fontHeight + glyphYBorder))
+        );
     }
 
     private int getRowCount(int[] widths, int maxRowWidth) {
@@ -236,5 +213,112 @@ public final class FontRasterizer {
             result++;
         }
         return result;
+    }
+}
+
+final class RangeMetrics {
+
+    private final int[] widths;
+
+    private final int characterWidth;
+
+    private final int height;
+
+    int[] widths() {
+        return widths;
+    }
+
+    int width(int index) {
+        return widths[index];
+    }
+
+    int characterWidth() {
+        return characterWidth;
+    }
+
+    int height() {
+        return height;
+    }
+
+    RangeMetrics(int[] widths, int characterWidth, int height) {
+        this.widths = widths;
+        this.characterWidth = characterWidth;
+        this.height = height;
+    }
+}
+
+final class Range {
+
+    private final char[] chars;
+
+    private final RangeMetrics metrics;
+
+    private final Glyph[] glyphs;
+
+    char charAt(int index) {
+        return chars[index];
+    }
+
+    int length() {
+        return chars.length;
+    }
+
+    RangeMetrics metrics() {
+        return metrics;
+    }
+
+    Glyph[] glyphs() {
+        return glyphs;
+    }
+
+    void glyph(int index, Glyph glyph) {
+        glyphs[index] = glyph;
+    }
+
+    Range(char[] chars) {
+        this(chars, null, new Glyph[chars.length]);
+    }
+
+    Range(char[] chars, RangeMetrics metrics, Glyph[] glyphs) {
+        this.chars = chars;
+        this.metrics = metrics;
+        this.glyphs = glyphs;
+    }
+
+    Range measure(Text text) {
+        int min = Integer.MAX_VALUE, max = 0, rangeHeight = 0, characterWidth = 0;
+        final int[] widths = new int[chars.length];
+        for (int i = 0; i < chars.length; i++) {
+            final char ch = chars[i];
+            text.setText(String.valueOf(ch));
+            final Bounds bounds = text.getLayoutBounds();
+            final int width = (int) Math.ceil(bounds.getWidth());
+            final int height = (int) Math.ceil(bounds.getHeight());
+            widths[i] = width;
+            if (height > rangeHeight) {
+                rangeHeight = height;
+            }
+            if (width < min) {
+                min = width;
+            }
+            if (width > max) {
+                max = width;
+            }
+        }
+        if (min == max) {
+            characterWidth = min;
+        }
+        return new Range(
+                chars,
+                new RangeMetrics(widths, characterWidth, rangeHeight),
+                glyphs
+        );
+    }
+
+    GlyphRange toGlyphRange() {
+        return new GlyphRange(
+                chars.length > 0 ? chars[0] : 0,
+                glyphs
+        );
     }
 }

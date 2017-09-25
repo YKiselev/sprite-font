@@ -16,7 +16,7 @@
 
 package com.github.ykiselev.gfx.sprite.font.builder;
 
-import com.github.ykiselev.gfx.sprite.font.CharRange;
+import com.github.ykiselev.gfx.sprite.font.chars.CharRange;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueFactory;
 import javafx.geometry.Insets;

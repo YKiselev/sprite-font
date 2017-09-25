@@ -23,7 +23,7 @@ import java.util.Objects;
  */
 public final class Glyph {
 
-    private final int character;
+    private final char character;
 
     private final int x;
 
@@ -47,7 +47,7 @@ public final class Glyph {
         return width;
     }
 
-    public Glyph(int character, int x, int y, int width) {
+    public Glyph(char character, int x, int y, int width) {
         this.character = character;
         this.x = x;
         this.y = y;

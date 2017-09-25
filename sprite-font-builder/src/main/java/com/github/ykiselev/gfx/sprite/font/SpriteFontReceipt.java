@@ -16,13 +16,13 @@
 
 package com.github.ykiselev.gfx.sprite.font;
 
+import com.github.ykiselev.gfx.sprite.font.chars.CharRange;
 import javafx.scene.text.Font;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -49,25 +49,40 @@ public final class SpriteFontReceipt {
     }
 
     public SpriteFontAndImage build() {
-        final Set<Character> uniqueCharacters = ranges.stream()
+        final List<CharRange> src = new ArrayList<>(ranges);
+        src.add(new CharRange(defaultCharacter, defaultCharacter));
+        final List<CharRange> ranges = join(src);
+        final List<char[]> chars = ranges.stream()
+                .sorted()
                 .map(CharRange::get)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-        uniqueCharacters.add(defaultCharacter);
-        final char[] chars = new char[uniqueCharacters.size()];
-        int i = 0;
-        for (Character ch : uniqueCharacters) {
-            chars[i] = ch;
-            i++;
-        }
-        Arrays.sort(chars);
+                .collect(Collectors.toList());
         return new FontRasterizer(
                 font,
                 chars,
-                Arrays.binarySearch(chars, defaultCharacter),
+                defaultCharacter,
                 glyphXBorder,
                 glyphYBorder
         ).build();
+    }
+
+    private List<CharRange> join(List<CharRange> src) {
+        final List<CharRange> result = new ArrayList<>();
+        int i = 0;
+        while (i < src.size() - 1) {
+            final ListIterator<CharRange> it = src.listIterator(i);
+            CharRange range = it.next();
+            while (it.hasNext()) {
+                final CharRange other = it.next();
+                final CharRange joined = range.join(other);
+                if (joined != null) {
+                    it.remove();
+                    range = joined;
+                }
+            }
+            result.add(range);
+            i++;
+        }
+        return result;
     }
 
     @Override
