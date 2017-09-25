@@ -75,6 +75,7 @@ public final class SpriteFontAndImage {
         }
         final JsonArrayBuilder ab = Json.createArrayBuilder();
         for (GlyphRange range : info.glyphs()) {
+            final JsonObjectBuilder rb = Json.createObjectBuilder();
             final JsonArrayBuilder rab = Json.createArrayBuilder();
             for (Glyph glyph : range.glyphs()) {
                 final JsonObjectBuilder b = Json.createObjectBuilder();
@@ -86,7 +87,8 @@ public final class SpriteFontAndImage {
                 }
                 rab.add(b);
             }
-            ab.add(rab);
+            rb.add("glyphs", rab);
+            ab.add(rb);
         }
         builder.add("glyphs", ab.build());
         os.write(

@@ -21,6 +21,7 @@ import com.github.ykiselev.gfx.sprite.font.SpriteFontReceipt;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.ConfigValueFactory;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Scene;
@@ -134,8 +135,6 @@ public final class AppStage {
             spriteFontAndImage = newReceipt.build();
             logger.info("Showing bitmap...");
             bitmapTab.show(spriteFontAndImage.getImage());
-            logger.info("Saving config...");
-            saveConfig();
             logger.info("Operation complete.");
         } catch (Exception ex) {
             showError("Operation failed!", ex);
@@ -160,6 +159,14 @@ public final class AppStage {
         fontSettingTab.load(cfg);
         characterRangeTab.load(cfg);
         bitmapTab.load(cfg);
+        try {
+            directory = new File(cfg.getString("working-directory"));
+            if (!directory.isDirectory()) {
+                directory = null;
+            }
+        } catch (Exception ex) {
+            logger.error("Failed to load working dir!", ex);
+        }
     }
 
     private void saveConfig() throws FileNotFoundException {
@@ -170,6 +177,12 @@ public final class AppStage {
                         bitmapTab.save(
                                 characterRangeTab.save(
                                         fontSettingTab.save(state)
+                                                .withValue(
+                                                        "working-directory",
+                                                        ConfigValueFactory.fromAnyRef(
+                                                                Objects.toString(directory)
+                                                        )
+                                                )
                                 )
                         ).root()
                 );
@@ -246,6 +259,7 @@ public final class AppStage {
                 final File file = dlg.showSaveDialog(appStage);
                 if (file != null) {
                     directory = file.getParentFile();
+                    saveConfig();
                     final FileChooser.ExtensionFilter filter = dlg.getSelectedExtensionFilter();
                     try (FileOutputStream os = new FileOutputStream(file)) {
                         if (filter == BIN_EXT_FILTER) {
