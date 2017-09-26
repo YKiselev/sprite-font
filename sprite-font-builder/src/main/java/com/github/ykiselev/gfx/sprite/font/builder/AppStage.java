@@ -74,6 +74,8 @@ public final class AppStage {
 
     private static final FileChooser.ExtensionFilter JSON_EXT_FILTER = new FileChooser.ExtensionFilter("Sprite Font Description As Json (*.json)", "*.json");
 
+    private static final FileChooser.ExtensionFilter RECEIPT_EXT_FILTER = new FileChooser.ExtensionFilter("Sprite Font Receipt (*.sfr)", "*.sfr");
+
     private final TabPane tabPane = new TabPane();
 
     private Config config;
@@ -99,6 +101,7 @@ public final class AppStage {
                 .addListener((observable, oldValue, newValue) -> {
                     if (newValue == bitmapTab.tab()) {
                         ensureBitmap();
+                        saveConfig();
                     }
                 });
         borderPane.setCenter(tabPane);
@@ -141,6 +144,33 @@ public final class AppStage {
         }
     }
 
+    private void loadReceipt(File file) {
+        loadReceipt(
+                ConfigFactory.parseFile(file)
+        );
+    }
+
+    private void loadReceipt(Config config) {
+        final Config cfg = config.getConfig("sprite-font-builder.state");
+        fontSettingTab.load(cfg);
+        characterRangeTab.load(cfg);
+        bitmapTab.load(cfg);
+    }
+
+    private void loadConfig(Config config) {
+        loadReceipt(config);
+        try {
+            directory = new File(
+                    config.getString("sprite-font-builder.state.working-directory")
+            );
+            if (!directory.isDirectory()) {
+                directory = null;
+            }
+        } catch (Exception ex) {
+            logger.error("Failed to load working dir!", ex);
+        }
+    }
+
     private void loadConfig(boolean reset) {
         config = ConfigFactory.load();
         if (!reset) {
@@ -155,44 +185,55 @@ public final class AppStage {
                 file.delete();
             }
         }
-        final Config cfg = this.config.getConfig("sprite-font-builder.state");
-        fontSettingTab.load(cfg);
-        characterRangeTab.load(cfg);
-        bitmapTab.load(cfg);
+        loadConfig(config);
+    }
+
+    private void saveConfig() {
         try {
-            directory = new File(cfg.getString("working-directory"));
-            if (!directory.isDirectory()) {
-                directory = null;
-            }
-        } catch (Exception ex) {
-            logger.error("Failed to load working dir!", ex);
+            saveFullConfig(getConfigFile());
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void saveConfig() throws FileNotFoundException {
-        final Config state = config.getConfig("sprite-font-builder.state");
-        final Config newConfig = ConfigFactory.empty()
+    private Config collectSpriteFontConfig() throws FileNotFoundException {
+        return ConfigFactory.empty()
                 .withValue(
                         "sprite-font-builder.state",
                         bitmapTab.save(
                                 characterRangeTab.save(
-                                        fontSettingTab.save(state)
-                                                .withValue(
-                                                        "working-directory",
-                                                        ConfigValueFactory.fromAnyRef(
-                                                                Objects.toString(directory)
-                                                        )
-                                                )
+                                        fontSettingTab.save(
+                                                ConfigFactory.empty()
+                                        )
                                 )
                         ).root()
                 );
-        final ConfigRenderOptions options = ConfigRenderOptions.concise()
-                .setComments(false)
-                .setFormatted(true)
-                .setJson(false);
+    }
 
-        try (PrintWriter writer = new PrintWriter(getConfigFile())) {
-            writer.write(newConfig.root().render(options));
+    private void saveFullConfig(File file) throws FileNotFoundException {
+        saveToFile(
+                collectSpriteFontConfig()
+                        .withValue(
+                                "sprite-font-builder.state.working-directory",
+                                ConfigValueFactory.fromAnyRef(
+                                        Objects.toString(directory)
+                                )
+                        ),
+                file
+        );
+    }
+
+    private void saveToFile(Config config, File file) throws FileNotFoundException {
+        try (PrintWriter writer = new PrintWriter(file)) {
+            writer.write(
+                    config.root()
+                            .render(
+                                    ConfigRenderOptions.concise()
+                                            .setComments(false)
+                                            .setFormatted(true)
+                                            .setJson(false)
+                            )
+            );
         }
     }
 
@@ -212,6 +253,8 @@ public final class AppStage {
         final Menu menuFile = new Menu("File");
         final MenuItem fileSaveAs = new MenuItem("Save As...");
         fileSaveAs.setOnAction(this::onSaveAs);
+        final MenuItem fileOpen = new MenuItem("Open...");
+        fileOpen.setOnAction(this::onOpen);
         final MenuItem fileSaveConfig = new MenuItem("Save Config");
         fileSaveConfig.setOnAction(this::onSaveConfig);
         final MenuItem fileResetConfig = new MenuItem("Reset Config");
@@ -220,14 +263,34 @@ public final class AppStage {
         fileExit.setOnAction((e) -> Platform.exit());
         menuFile.getItems().addAll(
                 fileSaveAs,
+                fileOpen,
                 new SeparatorMenuItem(),
                 fileSaveConfig,
-                new SeparatorMenuItem(),
                 fileResetConfig,
                 new SeparatorMenuItem(),
                 fileExit
         );
         return menuFile;
+    }
+
+    private void onOpen(ActionEvent actionEvent) {
+        try {
+            final FileChooser dlg = new FileChooser();
+            dlg.setTitle("Open File");
+            dlg.setInitialDirectory(directory);
+            dlg.getExtensionFilters().clear();
+            dlg.getExtensionFilters().addAll(RECEIPT_EXT_FILTER);
+            final File file = dlg.showOpenDialog(appStage);
+            if (file != null) {
+                directory = file.getParentFile();
+                final FileChooser.ExtensionFilter filter = dlg.getSelectedExtensionFilter();
+                if (filter == RECEIPT_EXT_FILTER) {
+                    loadReceipt(file);
+                }
+            }
+        } catch (Exception ex) {
+            showError("Failed to open file!", ex);
+        }
     }
 
     private void onResetConfig(ActionEvent actionEvent) {
@@ -255,7 +318,9 @@ public final class AppStage {
                 dlg.setInitialDirectory(directory);
                 dlg.setInitialFileName(spriteFontAndImage.getName());
                 dlg.getExtensionFilters().clear();
-                dlg.getExtensionFilters().addAll(BIN_EXT_FILTER, PNG_EXT_FILTER, JSON_EXT_FILTER);
+                dlg.getExtensionFilters().addAll(
+                        BIN_EXT_FILTER, PNG_EXT_FILTER, JSON_EXT_FILTER, RECEIPT_EXT_FILTER
+                );
                 final File file = dlg.showSaveDialog(appStage);
                 if (file != null) {
                     directory = file.getParentFile();
@@ -268,6 +333,11 @@ public final class AppStage {
                             spriteFontAndImage.savePng(os);
                         } else if (filter == JSON_EXT_FILTER) {
                             spriteFontAndImage.saveJson(os);
+                        } else if (filter == RECEIPT_EXT_FILTER) {
+                            saveToFile(
+                                    collectSpriteFontConfig(),
+                                    file
+                            );
                         }
                     }
                 }
