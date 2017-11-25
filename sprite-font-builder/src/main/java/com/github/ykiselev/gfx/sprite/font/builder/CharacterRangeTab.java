@@ -166,10 +166,13 @@ public final class CharacterRangeTab implements BuilderTab {
         if (StringUtils.isEmpty(text)) {
             return Collections.emptyList();
         }
-
         final List<CharRange> result = new ArrayList<>();
         final String[] lines = text.split("\\r?\\n|\\r|,");
         for (String line : lines) {
+            if (line == null) {
+                continue;
+            }
+            line = line.replaceAll("\\s", "");
             if (StringUtils.isEmpty(line)) {
                 continue;
             }
@@ -178,13 +181,11 @@ public final class CharacterRangeTab implements BuilderTab {
                 result.add(new CharRange(toChar(Integer.parseInt(parts[0])), toChar(Integer.parseInt(parts[1]))));
             } else if (parts.length == 1) {
                 final char start = toChar(Integer.parseInt(parts[0]));
-
                 result.add(new CharRange(start, start));
             } else {
                 throw new IllegalArgumentException("Bad range: " + line);
             }
         }
-
         return result;
     }
 

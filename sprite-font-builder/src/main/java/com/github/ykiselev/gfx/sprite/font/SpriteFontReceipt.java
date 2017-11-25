@@ -68,7 +68,7 @@ public final class SpriteFontReceipt {
     private List<CharRange> join(List<CharRange> src) {
         final List<CharRange> result = new ArrayList<>();
         int i = 0;
-        while (i < src.size() - 1) {
+        while (i < src.size()) {
             final ListIterator<CharRange> it = src.listIterator(i);
             CharRange range = it.next();
             while (it.hasNext()) {
