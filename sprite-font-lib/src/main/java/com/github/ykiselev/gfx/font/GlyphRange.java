@@ -26,9 +26,9 @@ import java.util.Objects;
  */
 public final class GlyphRange implements Serializable {
 
-    private final char start;
+    private final transient char start;
 
-    private final Glyph[] glyphs;
+    private final transient Glyph[] glyphs;
 
     public char start() {
         return start;
