@@ -67,7 +67,7 @@ public final class SpriteFontAndImage {
     public void saveJson(OutputStream os) throws IOException {
         final JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add("fontHeight", info.fontHeight())
-                .add("defaultCharacterIndex", info.defaultCharacterIndex())
+                .add("defaultCharacter", info.defaultCharacter())
                 .add("glyphXBorder", info.glyphXBorder())
                 .add("glyphYBorder", info.glyphYBorder());
         if (info.characterWidth() > 0) {

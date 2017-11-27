@@ -35,7 +35,7 @@ public class SpriteFontTest {
     public void shouldSerialize() throws Exception {
         final SpriteFont spriteFont = new SpriteFont(
                 14,
-                100,
+                '?',
                 10,
                 new GlyphRange[]{
                         new GlyphRange(

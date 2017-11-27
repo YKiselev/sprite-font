@@ -29,7 +29,7 @@ public final class SpriteFont implements Serializable {
 
     private final int fontHeight;
 
-    private final int defaultCharacterIndex;
+    private final char defaultCharacter;
 
     // If greater than 0, font is fixed pitch font
     private final int characterWidth;
@@ -48,8 +48,8 @@ public final class SpriteFont implements Serializable {
         return fontHeight;
     }
 
-    public int defaultCharacterIndex() {
-        return defaultCharacterIndex;
+    public char defaultCharacter() {
+        return defaultCharacter;
     }
 
     public int characterWidth() {
@@ -72,9 +72,9 @@ public final class SpriteFont implements Serializable {
         return glyphYBorder;
     }
 
-    public SpriteFont(int fontHeight, int defaultCharacterIndex, int characterWidth, GlyphRange[] glyphs, byte[] bitmap, int glyphXBorder, int glyphYBorder) {
+    public SpriteFont(int fontHeight, char defaultCharacter, int characterWidth, GlyphRange[] glyphs, byte[] bitmap, int glyphXBorder, int glyphYBorder) {
         this.fontHeight = fontHeight;
-        this.defaultCharacterIndex = defaultCharacterIndex;
+        this.defaultCharacter = defaultCharacter;
         this.characterWidth = characterWidth;
         this.glyphs = glyphs;
         this.bitmap = bitmap;
@@ -86,7 +86,7 @@ public final class SpriteFont implements Serializable {
     public String toString() {
         return "SpriteFont{" +
                 "fontHeight=" + fontHeight +
-                ", defaultCharacterIndex=" + defaultCharacterIndex +
+                ", defaultCharacter=" + defaultCharacter +
                 ", characterWidth=" + characterWidth +
                 ", glyphXBorder=" + glyphXBorder +
                 ", glyphYBorder=" + glyphYBorder +
@@ -99,7 +99,7 @@ public final class SpriteFont implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         SpriteFont that = (SpriteFont) o;
         return fontHeight == that.fontHeight &&
-                defaultCharacterIndex == that.defaultCharacterIndex &&
+                defaultCharacter == that.defaultCharacter &&
                 characterWidth == that.characterWidth &&
                 glyphXBorder == that.glyphXBorder &&
                 glyphYBorder == that.glyphYBorder &&
@@ -109,6 +109,6 @@ public final class SpriteFont implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fontHeight, defaultCharacterIndex, characterWidth, glyphs, bitmap, glyphXBorder, glyphYBorder);
+        return Objects.hash(fontHeight, defaultCharacter, characterWidth, glyphs, bitmap, glyphXBorder, glyphYBorder);
     }
 }
