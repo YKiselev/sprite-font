@@ -63,9 +63,8 @@ public final class GlyphRange implements Serializable {
 }
 
 /**
- * Each glyph is stored as 3 integers : (char << 16 + width),(x),(y)
+ * Each glyph is stored as 3 integers, first is packed (hi 16 bits - char, lo 16 bits - width) then x and y.
  */
-
 final class GlyphRangeReplacement implements Serializable {
 
     private static final long serialVersionUID = -4007521747869723305L;
