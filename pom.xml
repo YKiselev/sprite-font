@@ -20,7 +20,7 @@
 
     <groupId>com.github.ykiselev</groupId>
     <artifactId>sprite-font</artifactId>
-    <version>1.6</version>
+    <version>1.7-SNAPSHOT</version>
     <modules>
         <module>sprite-font-lib</module>
         <module>sprite-font-builder</module>
