@@ -19,42 +19,22 @@ package com.github.ykiselev.gfx.font;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Yuriy Kiselev (uze@yandex.ru).
  */
 public final class GlyphRange implements Serializable {
 
-    private final transient char start;
-
     private final transient Glyph[] glyphs;
-
-    public char start() {
-        return start;
-    }
 
     public Glyph[] glyphs() {
         return glyphs;
     }
 
-    public GlyphRange(char start, Glyph[] glyphs) {
-        this.start = start;
-        this.glyphs = glyphs;
-    }
-
-    /**
-     * Returns glyph for specified character
-     *
-     * @param character the character to return glyph for
-     * @return the glyph if character is in range or {@code null}
-     */
-    public Glyph glyph(char character) {
-        final int idx = character - start;
-        if (idx < 0 || idx >= glyphs.length) {
-            return null;
-        }
-        return glyphs[idx];
+    public GlyphRange(Glyph[] glyphs) {
+        this.glyphs = requireNonNull(glyphs);
     }
 
     @Override
@@ -62,19 +42,17 @@ public final class GlyphRange implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GlyphRange range = (GlyphRange) o;
-        return start == range.start &&
-                Arrays.equals(glyphs, range.glyphs);
+        return Arrays.equals(glyphs, range.glyphs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(start, glyphs);
+        return Arrays.hashCode(glyphs);
     }
 
     @Override
     public String toString() {
         return "GlyphRange{" +
-                "start=" + start +
                 ", glyphs=" + Arrays.toString(glyphs) +
                 '}';
     }
@@ -84,50 +62,54 @@ public final class GlyphRange implements Serializable {
     }
 }
 
+/**
+ * Each glyph is stored as 3 integers : (char << 16 + width),(x),(y)
+ */
+
 final class GlyphRangeReplacement implements Serializable {
 
     private static final long serialVersionUID = -4007521747869723305L;
 
-    private char start;
-
-    private int[] data;
+    private final int[] data;
 
     GlyphRangeReplacement(GlyphRange range) {
-        start = range.start();
         data = toArray(range.glyphs());
     }
 
     Object readResolve() throws ObjectStreamException {
         return new GlyphRange(
-                start,
                 toGlyphs(data)
         );
     }
 
     private Glyph[] toGlyphs(int[] data) {
-        final Glyph[] result = new Glyph[data.length >> 2];
+        final Glyph[] result = new Glyph[data.length / 3];
         for (int i = 0; i < result.length; i++) {
-            final int k = i * 4;
+            final int k = i * 3;
+            final int charAndWidth = data[k];
             result[i] = new Glyph(
-                    (char) data[k],
+                    (char) (charAndWidth >>> 16),
                     data[k + 1],
                     data[k + 2],
-                    data[k + 3]
+                    (short) (charAndWidth & 0xffff)
             );
         }
         return result;
     }
 
     private int[] toArray(Glyph[] glyphs) {
-        final int[] data = new int[4 * glyphs.length];
+        final int[] data = new int[3 * glyphs.length];
         for (int i = 0; i < glyphs.length; i++) {
             final Glyph glyph = glyphs[i];
-            final int k = i * 4;
-            data[k] = glyph.character();
+            final int k = i * 3;
+            data[k] = pack(glyph.character(), glyph.width());
             data[k + 1] = glyph.x();
             data[k + 2] = glyph.y();
-            data[k + 3] = glyph.width();
         }
         return data;
+    }
+
+    private int pack(char character, short width) {
+        return (character << 16) | (width & 0xffff);
     }
 }

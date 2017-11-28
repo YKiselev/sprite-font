@@ -39,11 +39,7 @@ public class SpriteFontTest {
                 10,
                 new GlyphRange[]{
                         new GlyphRange(
-                                'a',
-                                new Glyph[]{
-                                        new Glyph((char) 1, 2, 3, 4),
-                                        new Glyph((char) 2, 8, 3, 8)
-                                }
+                                new Glyph[0]
                         )
                 },
                 new byte[]{1, 2, 3},

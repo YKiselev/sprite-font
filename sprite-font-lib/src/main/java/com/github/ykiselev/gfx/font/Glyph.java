@@ -25,13 +25,13 @@ public final class Glyph {
 
     private final char character;
 
+    private final short width;
+
     private final int x;
 
     private final int y;
 
-    private final int width;
-
-    public int character() {
+    public char character() {
         return character;
     }
 
@@ -43,11 +43,11 @@ public final class Glyph {
         return y;
     }
 
-    public int width() {
+    public short width() {
         return width;
     }
 
-    public Glyph(char character, int x, int y, int width) {
+    public Glyph(char character, int x, int y, short width) {
         this.character = character;
         this.x = x;
         this.y = y;

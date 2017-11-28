@@ -38,6 +38,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Created by Uze on 07.01.2015.
  */
@@ -132,7 +134,7 @@ public final class FontRasterizer {
                                 character,
                                 x,
                                 y - fontHeight,
-                                characterWidth != metrics.width(i) ? metrics.width(i) : 0
+                                (short) metrics.width(i)
                         )
                 );
                 x += w;
@@ -241,7 +243,7 @@ final class RangeMetrics {
     }
 
     RangeMetrics(int[] widths, int characterWidth, int height) {
-        this.widths = widths;
+        this.widths = requireNonNull(widths);
         this.characterWidth = characterWidth;
         this.height = height;
     }
@@ -265,10 +267,6 @@ final class Range {
 
     RangeMetrics metrics() {
         return metrics;
-    }
-
-    Glyph[] glyphs() {
-        return glyphs;
     }
 
     void glyph(int index, Glyph glyph) {
@@ -316,9 +314,6 @@ final class Range {
     }
 
     GlyphRange toGlyphRange() {
-        return new GlyphRange(
-                chars.length > 0 ? chars[0] : 0,
-                glyphs
-        );
+        return new GlyphRange(glyphs);
     }
 }

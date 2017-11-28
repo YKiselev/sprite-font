@@ -71,7 +71,7 @@ public final class SpriteFont implements Serializable {
     // If greater than 0, font is fixed pitch font
     private final int characterWidth;
 
-    private final Glyph[] glyphs;
+    private final GlyphRange[] glyphs;
 
     // sprite, png image
     private final byte[] bitmap;
