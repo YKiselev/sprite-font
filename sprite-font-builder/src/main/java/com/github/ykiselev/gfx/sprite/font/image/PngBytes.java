@@ -31,11 +31,10 @@ import java.io.IOException;
 public final class PngBytes {
 
     public static byte[] convert(Image image) {
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream(16 * 1024)) {
+        final BufferedImage img = SwingFXUtils.fromFXImage(image, null);
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream(img.getWidth() * img.getHeight())) {
             ImageIO.write(
-                    toGrayScale(
-                            SwingFXUtils.fromFXImage(image, null)
-                    ),
+                    toGrayScale(img),
                     "png",
                     os
             );
@@ -55,8 +54,11 @@ public final class PngBytes {
                 BufferedImage.TYPE_BYTE_GRAY
         );
         final Graphics2D pic = grayImage.createGraphics();
-        pic.drawImage(src, 0, 0, null);
-        pic.dispose();
+        try {
+            pic.drawImage(src, 0, 0, null);
+        } finally {
+            pic.dispose();
+        }
         return grayImage;
     }
 }

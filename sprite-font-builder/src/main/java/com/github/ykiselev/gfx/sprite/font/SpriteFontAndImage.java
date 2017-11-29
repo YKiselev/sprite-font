@@ -61,7 +61,7 @@ public final class SpriteFontAndImage {
     }
 
     public void savePng(OutputStream os) throws IOException {
-        os.write(info.bitmap());
+        os.write(info.image());
     }
 
     public void saveJson(OutputStream os) throws IOException {

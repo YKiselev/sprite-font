@@ -36,7 +36,10 @@ public final class SpriteFont implements Serializable {
 
     private final GlyphRange[] glyphs;
 
-    private final byte[] bitmap;
+    /**
+     * Png image bytes
+     */
+    private final byte[] image;
 
     // Left and right glyph border size
     private final int glyphXBorder;
@@ -60,8 +63,8 @@ public final class SpriteFont implements Serializable {
         return glyphs;
     }
 
-    public byte[] bitmap() {
-        return bitmap;
+    public byte[] image() {
+        return image;
     }
 
     public int glyphXBorder() {
@@ -72,12 +75,12 @@ public final class SpriteFont implements Serializable {
         return glyphYBorder;
     }
 
-    public SpriteFont(int fontHeight, char defaultCharacter, int characterWidth, GlyphRange[] glyphs, byte[] bitmap, int glyphXBorder, int glyphYBorder) {
+    public SpriteFont(int fontHeight, char defaultCharacter, int characterWidth, GlyphRange[] glyphs, byte[] image, int glyphXBorder, int glyphYBorder) {
         this.fontHeight = fontHeight;
         this.defaultCharacter = defaultCharacter;
         this.characterWidth = characterWidth;
         this.glyphs = glyphs;
-        this.bitmap = bitmap;
+        this.image = image;
         this.glyphXBorder = glyphXBorder;
         this.glyphYBorder = glyphYBorder;
     }
@@ -104,11 +107,11 @@ public final class SpriteFont implements Serializable {
                 glyphXBorder == that.glyphXBorder &&
                 glyphYBorder == that.glyphYBorder &&
                 Arrays.equals(glyphs, that.glyphs) &&
-                Arrays.equals(bitmap, that.bitmap);
+                Arrays.equals(image, that.image);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fontHeight, defaultCharacter, characterWidth, glyphs, bitmap, glyphXBorder, glyphYBorder);
+        return Objects.hash(fontHeight, defaultCharacter, characterWidth, glyphs, image, glyphXBorder, glyphYBorder);
     }
 }
