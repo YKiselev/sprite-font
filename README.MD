@@ -1,4 +1,7 @@
 # Sprite Font Builder
+
+![Travis CI](https://travis-ci.org/YKiselev/sprite-font.svg?branch=master)
+
 ## Synopsis
 
 This is a Java FX based utility which allows you to convert any installed Font into Sprite Font, where Sprite Font is a structure consisting of png image containing glyphs (rasterized symbols) and technical information about glyphs bounding rectangles, font height, etc.
