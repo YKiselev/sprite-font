@@ -74,7 +74,7 @@ public final class SpriteFont implements Serializable {
     private final GlyphRange[] glyphs;
 
     // sprite, png image
-    private final byte[] bitmap;
+    private final byte[] image;
 
     // Left and right glyph border size
     private final int glyphXBorder;
