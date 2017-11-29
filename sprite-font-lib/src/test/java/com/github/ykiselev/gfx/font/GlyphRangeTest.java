@@ -35,8 +35,8 @@ public class GlyphRangeTest {
     public void shouldSerialize() throws Exception {
         final GlyphRange range = new GlyphRange(
                 new Glyph[]{
-                        new Glyph((char) 1, 2, 3, (short) 4),
-                        new Glyph((char) 2, 8, 3, (short) 8),
+                        new Glyph((char) 1, 0xffff, 3, (short) 4),
+                        new Glyph((char) 2, 8, 0xffff, (short) 8),
                         new Glyph(Character.MAX_VALUE, 8, 5, Short.MAX_VALUE),
                         new Glyph(Character.MIN_VALUE, 32, 6, Short.MAX_VALUE),
                         new Glyph(Character.MAX_VALUE, 55, 7, Short.MIN_VALUE),

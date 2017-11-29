@@ -18,6 +18,7 @@ package com.github.ykiselev.gfx.font;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static java.util.Objects.requireNonNull;
@@ -69,7 +70,7 @@ final class GlyphRangeReplacement implements Serializable {
 
     private static final long serialVersionUID = -4007521747869723305L;
 
-    private final int[] data;
+    private final byte[] data;
 
     GlyphRangeReplacement(GlyphRange range) {
         data = toArray(range.glyphs());
@@ -81,34 +82,28 @@ final class GlyphRangeReplacement implements Serializable {
         );
     }
 
-    private Glyph[] toGlyphs(int[] data) {
-        final Glyph[] result = new Glyph[data.length / 3];
+    private Glyph[] toGlyphs(byte[] data) {
+        final Glyph[] result = new Glyph[data.length >> 3];
+        final ByteBuffer buf = ByteBuffer.wrap(data);
         for (int i = 0; i < result.length; i++) {
-            final int k = i * 3;
-            final int charAndWidth = data[k];
             result[i] = new Glyph(
-                    (char) (charAndWidth >>> 16),
-                    data[k + 1],
-                    data[k + 2],
-                    (short) (charAndWidth & 0xffff)
+                    buf.getChar(),
+                    buf.getShort() & 0xffff,
+                    buf.getShort() & 0xffff,
+                    buf.getShort()
             );
         }
         return result;
     }
 
-    private int[] toArray(Glyph[] glyphs) {
-        final int[] data = new int[3 * glyphs.length];
-        for (int i = 0; i < glyphs.length; i++) {
-            final Glyph glyph = glyphs[i];
-            final int k = i * 3;
-            data[k] = pack(glyph.character(), glyph.width());
-            data[k + 1] = glyph.x();
-            data[k + 2] = glyph.y();
+    private byte[] toArray(Glyph[] glyphs) {
+        final ByteBuffer buf = ByteBuffer.allocate(8 * glyphs.length);
+        for (final Glyph glyph : glyphs) {
+            buf.putChar(glyph.character());
+            buf.putShort((short) (glyph.x() & 0xffff));
+            buf.putShort((short) (glyph.y() & 0xffff));
+            buf.putShort(glyph.width());
         }
-        return data;
-    }
-
-    private int pack(char character, short width) {
-        return (character << 16) | (width & 0xffff);
+        return buf.array();
     }
 }
