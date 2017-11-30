@@ -89,7 +89,15 @@ public final class SpriteFont implements Serializable {
     // constructor and methods skipped
 }
 ```
-Then you can create for example OpenGL texture from bitmap. Glyphs array can be turned into Map<Character,GlGlyph> where GlGlyph is a user class containig texture coordinates for each glyph.
+Then you can create for example OpenGL texture from bitmap. 
+```java
+final BufferedImage image;
+try (InputStream is = new ByteArrayInputStream(spriteFont.image())) {
+    image = ImageIO.read(is);
+}
+// create OpenGL texture from BufferedImage... 
+```
+Glyph ranges can be turned into GlGlyphRanges where each GlGlyph is a user class containing four texture coordinates (s0,t0,s1,t1) for each glyph.
 
 # License
 This project is licensed under the Apache License, Version 2.0.
