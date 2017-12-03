@@ -90,7 +90,7 @@ public final class FontRasterizer {
         final SnapshotParameters snapshotParameters = new SnapshotParameters();
         snapshotParameters.setFill(Color.color(0, 0, 0, 0));
         // Note: render glyphs before taking image snapshot
-        renderCharacters(canvas.getGraphicsContext2D(), ranges, fontHeight, characterWidth);
+        renderCharacters(canvas.getGraphicsContext2D(), ranges, fontHeight);
         final WritableImage image = canvas.snapshot(snapshotParameters, null);
         final SpriteFont spriteFont = new SpriteFont(
                 fontHeight,
@@ -106,7 +106,7 @@ public final class FontRasterizer {
         return new SpriteFontAndImage(font.getName(), spriteFont, image);
     }
 
-    private void renderCharacters(GraphicsContext ctx, Collection<Range> ranges, int fontHeight, int characterWidth) {
+    private void renderCharacters(GraphicsContext ctx, Collection<Range> ranges, int fontHeight) {
         final int width = (int) ctx.getCanvas().getWidth();
 
         ctx.setFont(font);

@@ -27,6 +27,9 @@ public final class SpriteFont implements Serializable {
 
     private static final long serialVersionUID = -6255551253816672629L;
 
+    /**
+     * Font height. To calculate line height add value of glyphYBorder (lineHeight = fontHeight + glyphYBorder).
+     */
     private final int fontHeight;
 
     private final char defaultCharacter;
