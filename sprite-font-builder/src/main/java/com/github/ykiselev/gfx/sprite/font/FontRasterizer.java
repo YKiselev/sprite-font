@@ -113,7 +113,7 @@ public final class FontRasterizer {
         ctx.setFill(Color.color(1, 1, 1, 1));
         ctx.setTextBaseline(VPos.BOTTOM);
         ctx.setTextAlign(TextAlignment.LEFT);
-        ctx.setFontSmoothingType(FontSmoothingType.GRAY);
+        ctx.setFontSmoothingType(FontSmoothingType.LCD);
 
         final int lineHeight = fontHeight + glyphYBorder;
         int x = glyphXBorder;
@@ -145,10 +145,10 @@ public final class FontRasterizer {
     private Text createText() {
         final Text text = new Text();
         text.setFont(font);
-        text.setBoundsType(TextBoundsType.VISUAL);
+        text.setBoundsType(TextBoundsType.LOGICAL);
         text.setTextAlignment(TextAlignment.LEFT);
         text.setTextOrigin(VPos.BOTTOM);
-        text.setFontSmoothingType(FontSmoothingType.GRAY);
+        text.setFontSmoothingType(FontSmoothingType.LCD);
         text.setSmooth(true);
         return text;
     }
