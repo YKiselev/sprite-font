@@ -20,7 +20,7 @@
 
     <groupId>com.github.ykiselev</groupId>
     <artifactId>sprite-font</artifactId>
-    <version>1.9</version>
+    <version>1.10-SNAPSHOT</version>
     <modules>
         <module>sprite-font-lib</module>
         <module>sprite-font-builder</module>
@@ -50,7 +50,7 @@
         <connection>scm:git:https://github.com/YKiselev/sprite-font.git</connection>
         <developerConnection>scm:git:git@github.com:YKiselev/sprite-font.git</developerConnection>
         <url>https://github.com/YKiselev/sprite-font/tree/master</url>
-        <tag>sprite-font-1.9</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <dependencyManagement>

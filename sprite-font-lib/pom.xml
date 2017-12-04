@@ -19,7 +19,7 @@
     <parent>
         <artifactId>sprite-font</artifactId>
         <groupId>com.github.ykiselev</groupId>
-        <version>1.9</version>
+        <version>1.10-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
